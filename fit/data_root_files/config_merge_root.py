@@ -10,10 +10,10 @@ Ex: RunA.root + RunB.root = RunAB.root
 '''
 
 # Path to the RunX.root files
-path='/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_data/analysis_fit/fit/data_root_files'
+path='/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_data/analysis_fit/fit/data_root_files/2016-pos-VFP'
 
 # last characters of the file name (this is similar to the cate variable on the triggerprocessor config)
-end_name = '_vtx0p1.root'
+end_name = '_sigma_eff_vtx0p05.root'
 
 # Name of the merged file 
-final_name = 'Charmonium2017_HLT_Dimuon25'
+final_name = 'Charmonium2016-pos-VFP_HLT_Dimuon16'

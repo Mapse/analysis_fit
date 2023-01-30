@@ -100,6 +100,7 @@ def create_root(accumulator, path_output, era, condition=None):
 
     # Taks the accumulator and the trigger name
     acc, trigger_name = accumulator
+    xsec_weight = config.xsec_weight
 
     # If the option is 'no_trigger' it will take the original accumulator that comes from the
     # files produced via condor
@@ -142,6 +143,23 @@ def create_root(accumulator, path_output, era, condition=None):
         jpsi_dstar_mass = acc['DimuDstar']['dimu_dstar_mass'].value
         jpsi_dstar_deltarap = acc['DimuDstar']['dimu_dstar_deltarap'].value
 
+        weight_xsec = np.full_like(all_asso_jpsi_dl, xsec_weight)
+
+
+        ## Applying weighs
+
+        """ dstar_right_charge = np.repeat(dstar_right_charge, xsec_weight)
+        all_asso_jpsi_mass = np.repeat(all_asso_jpsi_mass, xsec_weight)
+        all_asso_jpsi_pt = np.repeat(all_asso_jpsi_pt, xsec_weight)
+        all_asso_jpsi_dl = np.repeat(all_asso_jpsi_dl, xsec_weight)
+        all_asso_jpsi_dl_err = np.repeat(all_asso_jpsi_dl_err, xsec_weight)
+        jpsi_dstar_mass = np.repeat(jpsi_dstar_mass, xsec_weight)
+        jpsi_dstar_deltarap = np.repeat(jpsi_dstar_deltarap, xsec_weight) """
+
+
+        
+
+
     # If the variable condition is not give it will raise an exception
     else:
         raise Exception(f' The variable condition is {condition}, which is not valid! You should provide a valide one, either no_trigger or trigger!')
@@ -156,12 +174,14 @@ def create_root(accumulator, path_output, era, condition=None):
                                       "jpsi_mass": "float32", 
                                       "jpsi_pt": "float32",
                                       "jpsi_dl": "float32",
-                                      "jpsi_dlErr": "float32"})
+                                      "jpsi_dlErr": "float32",
+                                      "weight_xsec": "float32",})
         ds['asso'].extend({"dstar_mass": dstar_right_charge, 
                            "jpsi_mass": all_asso_jpsi_mass, 
                            "jpsi_pt": all_asso_jpsi_pt,
                            "jpsi_dl": all_asso_jpsi_dl,
-                           "jpsi_dlErr": all_asso_jpsi_dl_err})
+                           "jpsi_dlErr": all_asso_jpsi_dl_err,
+                           "weight_xsec": weight_xsec,})
 
         ds['obje'] = uproot3.newtree({"jpsi_dstar_mass": "float32",
                                       "jpsi_dstar_deltarap": "float32", })

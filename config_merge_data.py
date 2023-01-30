@@ -20,7 +20,7 @@ To run you simply do: python3 merge_data.py
 
 # List with eras to run
 era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',]
-era_list=['RunE']
+era_list=['sps']
 
 # Number of chunks to divide the file list
 n_size = 10

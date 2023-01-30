@@ -4,7 +4,6 @@ if [[ $_ == $0 ]]; then
   exit 0
 fi
 
-cd ..
 conda deactivate ; conda deactivate 
 
 # activate if CMSSW Needed:
@@ -12,5 +11,4 @@ conda deactivate ; conda deactivate
 ###########################
 
 conda activate OniaOpenCharmRun2ULenv
-cd OniaOpenCharmRun2ULAna
 voms-proxy-init --rfc --voms cms

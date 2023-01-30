@@ -87,16 +87,19 @@ class TriggerProcessor(processor.ProcessorABC):
             'JpsiDstar': processor.dict_accumulator({
                 'Jpsi_mass': hist.Hist("Events", hist.Bin("mass", "$M_{\mu^+\mu^-}$ [GeV/$c^2$]", 100, 2.95, 3.25)), 
                 'Jpsi_p': hist.Hist("Events", 
-                                    hist.Bin("pt", "$p_{T,\mu^+\mu^-}$ [GeV/c]", 100, 0, 100),
+                                    hist.Bin("pt", "$p_{T,\mu^+\mu^-}$ [GeV/c]", 100, 0, 150),
                                     hist.Bin("eta", "$\eta_{\mu^+\mu^-}$", 60, -2.5, 2.5),
                                     hist.Bin("phi", "$\phi_{\mu^+\mu^-}$", 70, -3.5, 3.5)),
                 'Jpsi_rap': hist.Hist("Events", hist.Bin("rap", "y", 60, -2.5, 2.5)),
+                'Jpsi_dl': hist.Hist("Events", hist.Bin("dl", "decay length", 100, -0.5, 1.5)),
                 'Jpsi_dlSig': hist.Hist("Events", hist.Bin("dlSig", "dl Significance", 100, -50, 200)),
                 'JpsiDstar_deltarap': hist.Hist("Events", hist.Bin("deltarap", "$\Delta y$", 50, -5, 5)),
-                'JpsiDstar_mass': hist.Hist("Events", hist.Bin("mass", "$m_{J/\psi D*}$ [$GeV/c^2$]", 50, 0, 100)),
+                'JpsiDstar_deltaphi': hist.Hist("Events", hist.Bin("deltaphi", r"$|\phi_{J/\psi} - \phi_{D^*}|$ [rad]", 80, 0, 5)),
+                'JpsiDstar_mass': hist.Hist("Events", hist.Bin("mass", "$m_{J/\psi D*}$ [$GeV/c^2$]", 50, 0, 120)),
+                'JpsiDstar_pt': hist.Hist("Events", hist.Bin("pt", "$p_{T, J/\psi D*}$ [$GeV/c$]", 50, 0, 150)),
                 'Dstar_p': hist.Hist("Events",
                                  hist.Cat("chg", "charge"), 
-                                 hist.Bin("pt", "$p_{T,D*}$ [GeV/c]", 100, 0, 50),
+                                 hist.Bin("pt", "$p_{T,D*}$ [GeV/c]", 100, 0, 100),
                                  hist.Bin("eta", "$\eta_{D*}$", 80, -2.5, 2.5),
                                  hist.Bin("phi", "$\phi_{D*}$", 70, -3.5, 3.5)),
                 'Dstar_rap': hist.Hist("Events", 
@@ -203,6 +206,8 @@ class TriggerProcessor(processor.ProcessorABC):
         # Uses unflatten with the number of Dimuon in order to apply trigger correction
         Dstar = ak.unflatten(Dstar, Dstar_acc['nDstar'].value) """
 
+        #print(dir(DimuDstar_p4))
+
         ## DimuDstar collection
 
         # Creates the pt, eta, phi, m lorentz vector.
@@ -224,8 +229,11 @@ class TriggerProcessor(processor.ProcessorABC):
             'associationProb' : DimuDstar_acc['Dstar']['associationProb'].value,            
             'dimu_dstar_deltarap' : DimuDstar_acc['deltarap'].value,
             'dimu_dstar_mass' : DimuDstar_p4.mass, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
+            'dimu_dstar_pt' : DimuDstar_p4.pt, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
             'is_jpsi' : DimuDstar_acc['Dimu']['is_jpsi'].value,
             'wrg_chg': DimuDstar_acc['Dstar']['wrg_chg'].value,}, with_name='PtEtaPhiMCandidate')  
+        
+        DimuDstar['dimu_dstar_deltaphi'] = np.remainder(np.abs(DimuDstar.jpsi_phi - DimuDstar.dstar_phi), np.pi)
         
         DimuDstar = ak.unflatten(DimuDstar, DimuDstar_acc['nDimuDstar'].value)
 
@@ -255,15 +263,23 @@ class TriggerProcessor(processor.ProcessorABC):
         ## DimuDstar collection
 
         # Trigger cut
-        #DimuDstar = DimuDstar[trigger_cut]
+        DimuDstar = DimuDstar[trigger_cut]
 
-        DimuDstar = DimuDstar[(DimuDstar.jpsi_pt > 25.0) & (DimuDstar.jpsi_pt < 150.0)]
-        #DimuDstar = DimuDstar[np.absolute(DimuDstar.jpsi_rap) < 1.2]
-        #DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
+        DimuDstar = DimuDstar[(DimuDstar.jpsi_pt > config.ptmin) & (DimuDstar.jpsi_pt < config.ptmax)]
+        print(f'pT min: {config.ptmin}')
+        print(f'pT max: {config.ptmax}')
+
+        #DimuDstar = DimuDstar[(DimuDstar.dimu_dstar_mass > 4) & (DimuDstar.dimu_dstar_mass < 8)]
+        #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 20 ]
+
+        #DimuDstar = DimuDstar[DimuDstar.jpsi_dl < 0.06]
+
+        DimuDstar = DimuDstar[np.absolute(DimuDstar.jpsi_rap) < 1.2]
+        DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
         #print(DimuDstar.jpsi_eta)
 
         # vtx prob cut 
-        #DimuDstar = DimuDstar[DimuDstar.associationProb > 0.1]
+        #DimuDstar = DimuDstar[DimuDstar.associationProb > 0.05]
 
         # To fill histograms
 
@@ -273,13 +289,16 @@ class TriggerProcessor(processor.ProcessorABC):
         jpsi_phi = ak.flatten(DimuDstar.jpsi_phi)
         jpsi_rap = ak.flatten(DimuDstar.jpsi_rap)
         jpsi_dlsig = ak.flatten(DimuDstar.jpsi_dlsig)
+        jpsi_dl = ak.flatten(DimuDstar.jpsi_dl)
         dstar_deltamr = ak.flatten(DimuDstar.dstar_deltamr)
         dstar_pt = ak.flatten(DimuDstar.dstar_pt)
         dstar_eta = ak.flatten(DimuDstar.dstar_eta)
         dstar_phi = ak.flatten(DimuDstar.dstar_phi)
         dstar_rap = ak.flatten(DimuDstar.dstar_rap)
         jpsi_dstar_deltarap = ak.flatten(DimuDstar.dimu_dstar_deltarap)
+        jpsi_dstar_deltaphi= ak.flatten(DimuDstar.dimu_dstar_deltaphi)
         jpsi_dstar_mass = ak.flatten(DimuDstar.dimu_dstar_mass) 
+        jpsi_dstar_pt = ak.flatten(DimuDstar.dimu_dstar_pt) 
 
         """muon_lead_acc = processor.dict_accumulator({})
         for var in Muon_lead.fields:
@@ -340,20 +359,14 @@ class TriggerProcessor(processor.ProcessorABC):
 
         ## Histograms
 
-        # Jpsi
-        output['JpsiDstar']['Jpsi_mass'].fill(mass=jpsi_mass)
-        output['JpsiDstar']['Jpsi_p'].fill(pt=jpsi_pt,
-                                 eta=jpsi_eta,
-                                 phi=jpsi_phi)
-        output['JpsiDstar']['Jpsi_rap'].fill(rap=jpsi_rap)
-        output['JpsiDstar']['Jpsi_dlSig'].fill(dlSig=jpsi_dlsig)
-
         # JpsiDstar
         output['JpsiDstar']['Jpsi_mass'].fill(mass=jpsi_mass)
         output['JpsiDstar']['Jpsi_p'].fill(pt=jpsi_pt,
                                            eta=jpsi_eta,
                                            phi=jpsi_phi)
         output['JpsiDstar']['Jpsi_rap'].fill(rap=jpsi_rap)
+        output['JpsiDstar']['Jpsi_dlSig'].fill(dlSig=jpsi_dlsig)
+        output['JpsiDstar']['Jpsi_dl'].fill(dl=jpsi_dl)
 
         output['JpsiDstar']['Dstar_deltamr'].fill(chg='right charge', deltamr=dstar_deltamr)
         output['JpsiDstar']['Dstar_p'].fill(chg='right charge',
@@ -364,7 +377,9 @@ class TriggerProcessor(processor.ProcessorABC):
         output['JpsiDstar']['Dstar_rap'].fill(chg='right charge', rap=dstar_rap)
 
         output['JpsiDstar']['JpsiDstar_deltarap'].fill(deltarap=jpsi_dstar_deltarap)
+        output['JpsiDstar']['JpsiDstar_deltaphi'].fill(deltaphi=jpsi_dstar_deltaphi)
         output['JpsiDstar']['JpsiDstar_mass'].fill(mass=jpsi_dstar_mass)
+        output['JpsiDstar']['JpsiDstar_pt'].fill(pt=jpsi_dstar_pt)
 
         if mode == 'sum':
             print('Saving accumulator...')
