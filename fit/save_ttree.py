@@ -61,14 +61,16 @@ def load_accumulator(main_path, era, condition):
                 # Stores all other files finished with .coffea
                 if file.name.endswith('.coffea') and (file.stat().st_size != 0):
                     files.append(file.path)
-
         # Strategy to take the trigger name and store on trigger_name variable.
         # Ex: trigger_name = 'HLT_Dimuon25'
-        trigger_name = files[0]
-        trigger_name = trigger_name.split('HLT', 1)
-        trigger_name = trigger_name[1]
-        trigger_name = 'HLT' + trigger_name.replace('.coffea', '')
-        trigger_name = trigger_name[:12]    
+        try:
+            trigger_name = files[0]
+            trigger_name = trigger_name.split('HLT', 1)
+            trigger_name = trigger_name[1]
+            trigger_name = 'HLT' + trigger_name.replace('.coffea', '')
+            trigger_name = trigger_name[:12]    
+        except:
+            trigger_name = era
 
         # Loads the first file on the list.
         acc = load(files[0])
@@ -77,12 +79,12 @@ def load_accumulator(main_path, era, condition):
         # in order to monitor the loop progress.
         for i in tqdm(files[1:], desc="Loading " + era, unit=" files", total=len(files)-1):
             acc += load(i)
-        
+        print(trigger_name)
         return acc, trigger_name
 
     
 
-def create_root(accumulator, path_output, era, condition=None):
+def create_root(accumulator, path_output, era, bin, condition=None):
 
     '''
     This function is used to produce root ntuple from coffea files.
@@ -101,6 +103,7 @@ def create_root(accumulator, path_output, era, condition=None):
     # Taks the accumulator and the trigger name
     acc, trigger_name = accumulator
     xsec_weight = config.xsec_weight
+    #for b in bin:
 
     # If the option is 'no_trigger' it will take the original accumulator that comes from the
     # files produced via condor
@@ -127,28 +130,63 @@ def create_root(accumulator, path_output, era, condition=None):
         ## Dstar
 
         # Takes all Dstar data
-        all_asso_dstar = acc['DimuDstar']['dstar_deltamr'].value
+        #all_asso_dstar = acc['DimuDstar']['dstar_deltamr'].value
         
-        # Takes wrong charge flags
-        wrg_chg = acc['DimuDstar']['wrg_chg'].value
-        # Takes wrong and right charge Dstars
-        dstar_wrong_charge = acc['DimuDstar']['dstar_deltamr'].value[wrg_chg]
-        dstar_right_charge = acc['DimuDstar']['dstar_deltamr'].value[~wrg_chg]
-        # Jpsi
-        all_asso_jpsi_mass = acc['DimuDstar']['jpsi_mass'].value[~wrg_chg]
-        all_asso_jpsi_pt = acc['DimuDstar']['jpsi_pt'].value[~wrg_chg]
-        all_asso_jpsi_dl = acc['DimuDstar']['jpsi_dl'].value[~wrg_chg]
-        all_asso_jpsi_dl_err = acc['DimuDstar']['jpsi_dlErr'].value[~wrg_chg]
-        # DimuDstar
-        jpsi_dstar_mass = acc['DimuDstar']['dimu_dstar_mass'].value
-        jpsi_dstar_deltarap = acc['DimuDstar']['dimu_dstar_deltarap'].value
+        if 'dps' in era or 'sps' in era:
+
+            ## Dstar
+            wrg_chg = acc['DimuDstar']['Dstar']['wrg_chg'].value
+            dstar_mass = acc['DimuDstar']['Dstar']['deltamr'].value[~wrg_chg]
+            dstar_pt = acc['DimuDstar']['Dstar']['pt'].value[~wrg_chg]
+            dstar_rap = acc['DimuDstar']['Dstar']['rap'].value[~wrg_chg]
+            dstar_d0dlsig = acc['DimuDstar']['Dstar']['D0dlSig'].value[~wrg_chg]
+            dstar_d0dl = acc['DimuDstar']['Dstar']['D0dl'].value[~wrg_chg]
+
+            ## Jpsi
+            all_asso_jpsi_mass = acc['DimuDstar']['Dimu']['mass'].value[~wrg_chg]
+            all_asso_jpsi_pt = acc['DimuDstar']['Dimu']['pt'].value[~wrg_chg]
+            all_asso_jpsi_rap = acc['DimuDstar']['Dimu']['rap'].value[~wrg_chg]
+            all_asso_jpsi_dl = acc['DimuDstar']['Dimu']['dl'].value[~wrg_chg]
+            all_asso_jpsi_dl_err = acc['DimuDstar']['Dimu']['dlErr'].value[~wrg_chg]
+
+            # DimuDstar
+            #jpsi_dstar_mass = acc['DimuDstar']['mass'].value # Not implemented to MC!!
+            jpsi_dstar_deltarap = acc['DimuDstar']['deltarap'].value
+
+        else:
+            
+            ## Dstar
+            # Takes wrong charge flags
+            wrg_chg = acc['DimuDstar']['wrg_chg'].value
+            # Takes wrong and right charge Dstars
+            dstar_mass = acc['DimuDstar']['dstar_deltamr'].value[~wrg_chg]
+            dstar_pt = acc['DimuDstar']['dstar_pt'].value[~wrg_chg]
+            dstar_rap = acc['DimuDstar']['dstar_rap'].value[~wrg_chg]
+            dstar_d0dlsig = acc['DimuDstar']['dstar_d0dlsig'].value[~wrg_chg]
+            dstar_d0dl = acc['DimuDstar']['dstar_d0dl'].value[~wrg_chg]
+
+            ## Jpsi
+            all_asso_jpsi_mass = acc['DimuDstar']['jpsi_mass'].value[~wrg_chg]
+            all_asso_jpsi_pt = acc['DimuDstar']['jpsi_pt'].value[~wrg_chg]
+            all_asso_jpsi_rap = acc['DimuDstar']['jpsi_rap'].value[~wrg_chg]
+            all_asso_jpsi_dl = acc['DimuDstar']['jpsi_dl'].value[~wrg_chg]
+            all_asso_jpsi_dl_err = acc['DimuDstar']['jpsi_dlErr'].value[~wrg_chg]
+
+            # DimuDstar           
+            jpsi_dstar_mass = acc['DimuDstar']['dimu_dstar_mass'].value
+            jpsi_dstar_deltarap = acc['DimuDstar']['dimu_dstar_deltarap'].value
+
+        
+        
 
         weight_xsec = np.full_like(all_asso_jpsi_dl, xsec_weight)
 
 
         ## Applying weighs
 
-        """ dstar_right_charge = np.repeat(dstar_right_charge, xsec_weight)
+        """ dstar_mass = np.repeat(dstar_mass, xsec_weight)
+        dstar_d0dl = np.repeat(dstar_d0dl, xsec_weight)
+        dstar_d0dlsig = np.repeat(dstar_d0dlsig, xsec_weight)
         all_asso_jpsi_mass = np.repeat(all_asso_jpsi_mass, xsec_weight)
         all_asso_jpsi_pt = np.repeat(all_asso_jpsi_pt, xsec_weight)
         all_asso_jpsi_dl = np.repeat(all_asso_jpsi_dl, xsec_weight)
@@ -157,36 +195,55 @@ def create_root(accumulator, path_output, era, condition=None):
         jpsi_dstar_deltarap = np.repeat(jpsi_dstar_deltarap, xsec_weight) """
 
 
-        
-
-
     # If the variable condition is not give it will raise an exception
     else:
         raise Exception(f' The variable condition is {condition}, which is not valid! You should provide a valide one, either no_trigger or trigger!')
     
     # Creates the root file for reach input.
     if config.cate == '':
-        root_name = path_output + era + '_' + trigger_name  + config.cate  + '.root'
+        if 'dps' in era or 'sps' in era:
+            root_name = path_output + trigger_name  + config.cate  + '.root'
+        else:
+            root_name = path_output + era + '_' + trigger_name  + config.cate  + '.root'
     else:
-        root_name = path_output + era + '_' + trigger_name  + '_' + config.cate  + '.root'
+        if 'dps' in era or 'sps' in era:
+            root_name = path_output + trigger_name  + '_' + config.cate  + '.root'
+        else:
+            root_name = path_output + era + '_' + trigger_name  + '_' + config.cate  + '.root'
+
     with uproot3.recreate(root_name) as ds:
         ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
+                                      "dstar_pt": "float32",
+                                      "dstar_rap": "float32",
+                                      "dstar_d0dl" : "float32",
+                                      "dstar_d0dlsig" : "float32",
                                       "jpsi_mass": "float32", 
                                       "jpsi_pt": "float32",
+                                      "jpsi_rap": "float32",
                                       "jpsi_dl": "float32",
                                       "jpsi_dlErr": "float32",
                                       "weight_xsec": "float32",})
-        ds['asso'].extend({"dstar_mass": dstar_right_charge, 
+        ds['asso'].extend({"dstar_mass": dstar_mass, 
+                           "dstar_pt": dstar_pt, 
+                           "dstar_rap": dstar_rap,   
+                           "dstar_d0dl": dstar_d0dl,  
+                           "dstar_d0dlsig": dstar_d0dlsig, 
                            "jpsi_mass": all_asso_jpsi_mass, 
-                           "jpsi_pt": all_asso_jpsi_pt,
+                           "jpsi_pt": all_asso_jpsi_pt, 
+                           "jpsi_rap": all_asso_jpsi_rap,
                            "jpsi_dl": all_asso_jpsi_dl,
                            "jpsi_dlErr": all_asso_jpsi_dl_err,
                            "weight_xsec": weight_xsec,})
+        if 'dps' in era or 'sps' in era:
 
-        ds['obje'] = uproot3.newtree({"jpsi_dstar_mass": "float32",
-                                      "jpsi_dstar_deltarap": "float32", })
-        ds['obje'].extend({"jpsi_dstar_mass": jpsi_dstar_mass, 
-                           "jpsi_dstar_deltarap": jpsi_dstar_deltarap,})
+            ds['obje'] = uproot3.newtree({"jpsi_dstar_deltarap": "float32", })
+            ds['obje'].extend({"jpsi_dstar_deltarap": jpsi_dstar_deltarap,})
+        
+        else:
+            ds['obje'] = uproot3.newtree({"jpsi_dstar_mass": "float32",
+                                        "jpsi_dstar_deltarap": "float32", })
+            ds['obje'].extend({"jpsi_dstar_mass": jpsi_dstar_mass, 
+                            "jpsi_dstar_deltarap": jpsi_dstar_deltarap,})
 
 if __name__ == '__main__':
 
@@ -201,14 +258,21 @@ if __name__ == '__main__':
     era_list= config.era_list
     # Path to the files
     main_path = config.main_path
+    # bins
+    bin = config.bin
 
     # Loop over the era list defined on config_trigger_procesor    
     for era in era_list:
 
         # Built the path to files with trigger applied
-        path_merged_data = main_path  + '/' + era + '/' + 'merged_data/trigger' + '/' + config.cate 
-        print('Reading files from:')
-        print(main_path  + '/' + era + '/' + 'merged_data/trigger' + '/' + config.cate )
+        if 'dps' in era or 'sps' in era:
+            path_merged_data = main_path  + '/' + era + '/' + 'merged_data/'
+            print('Reading files from:')
+            print(path_merged_data) 
+        else:
+            path_merged_data = main_path  + '/' + era + '/' + 'merged_data/trigger' + '/' + config.cate 
+            print('Reading files from:')
+            print(path_merged_data)
 
         # Analysis condition: trigger or no_trigger
         condition = config.condition
@@ -223,7 +287,7 @@ if __name__ == '__main__':
 
         
         # Create the root files
-        create_root(acc, path_output, era, condition)
+        create_root(acc, path_output, era, bin, condition)
 
 """ import os
 main_path = '/home/mabarros/Analysis_2018/OniaOpenCharmRun2ULAna/output/Charmonium_2018/RunA/merged_data'
