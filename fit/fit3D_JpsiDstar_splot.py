@@ -521,17 +521,31 @@ def fit3DJpsiDstar(opt):
         f.write('\n')
         f.write(str(chi_square_dstar))
 
-def splot_jpsidstar(wfile=config.yield_files[0]):
+def splot_jpsidstar(opt, wfile=config.yield_files[0]):
 
+    """
+
+    This function does splot and create plots for signal quantities (jpsi mass, jpsi decay length,
+    and dstar delta mass) with the s-weights calculated with splot. It takes the workspace created
+    with fit3DJpsiDstar function with the fitted pdfs.
+
+    """
+
+    # Takes the root file with the workspace
     file_root = ROOT.TFile(wfile.replace('_wspace', '') + '_3Dfit.root')
-
+    # Takes the workspace object
     wspace = file_root.Get(wfile.replace('fit_root_files/', ''))
 
-    # Splot part
+    ## Splot part
+
+    # Takes the 3D pdf
     sPlotmodel3D = wspace.pdf("model3D")
+    # Takes the paremeters (yields, pdf variables, etc)
     params = sPlotmodel3D.getVariables()
+    # Takes the original data
     data = wspace.data("data")
 
+    # Takes all yields (signal, background 1, ... , background 7)
     sPlot_signal_frac = params.find("signal_frac")
     sPlot_bkg1_frac = params.find("bkg1_frac")   
     sPlot_bkg2_frac = params.find("bkg2_frac")  
@@ -541,63 +555,106 @@ def splot_jpsidstar(wfile=config.yield_files[0]):
     sPlot_bkg6_frac = params.find("bkg6_frac") 
     sPlot_bkg7_frac = params.find("bkg7_frac") 
    
-    sData = ROOT.RooStats.SPlot(
+    # Do splot
+    ROOT.RooStats.SPlot(
     'sData', 'sData', data, sPlotmodel3D,
     ROOT.RooArgList(sPlot_signal_frac, sPlot_bkg1_frac, sPlot_bkg2_frac, sPlot_bkg3_frac, 
-                    sPlot_bkg4_frac, sPlot_bkg5_frac, sPlot_bkg6_frac, sPlot_bkg7_frac,) 
-)  
+                    sPlot_bkg4_frac, sPlot_bkg5_frac, sPlot_bkg6_frac, sPlot_bkg7_frac,))  
     
-    # Make the new weight datasets for all variables
+    # Make the new weight datasets for all signal
     data_weighted = ROOT.RooDataSet(data.GetName(), data.GetTitle(), data, data.get(), "", "signal_frac_sw")
-    #data_weighted = ROOT.RooDataSet('a', ' ', data, data.get(), "signal_frac_sw")
-    
-    """ for d in range(data.numEntries()):
-        print(sData.GetSWeight(d, "signal_frac_sw")) """
 
-    ## Make plots
+    ## Plots part
+
+    # Remove all histograms titles.
+    ROOT.gStyle.SetOptTitle(0)
 
     # Jpsi mass
     jpsi_mass = params.find("jpsi_mass")
     frame_jpsi_mass = jpsi_mass.frame(ROOT.RooFit.Title("Dimuon Invariant mass"))
     frame_jpsi_mass.GetXaxis().SetTitle("#M_{\mu^+\mu^-} \ [GeV/c^2]")
-
     data_weighted.plotOn(frame_jpsi_mass, ROOT.RooFit.Name("Data"), ROOT.RooFit.DataError(ROOT.RooAbsData.SumW2))
     
+    # Legend
+    leg_jpsi_mass = ROOT.TLegend(0.1,0.7,0.27,0.9) #(xsize, ysize, xcoord, ycoord)
+    leg_jpsi_mass.SetTextSize(0.025)
+    leg_jpsi_mass.AddEntry(frame_jpsi_mass.findObject("Data"), "Data with sweights", "LEP")
 
+    # Canvas
     cjm = ROOT.TCanvas("canvas_jpsi_mass", '', 1400, 900)
     frame_jpsi_mass.Draw()
+    leg_jpsi_mass.Draw("same")
     cjm.Draw()
-    cjm.SaveAs('splot3d_jpsi_mass.png')
+
+    # Legend: jpsi mass
+    right = ROOT.TLatex()
+    right.SetNDC()
+    right.SetTextFont(43)
+    right.SetTextSize(50)
+    right.SetTextAlign(13)
+    right.DrawLatex(0.10,.95,"#bf{CMS} #scale[0.7]{#it{Preliminary}}")
+    right.SetTextSize(34)
+    right.DrawLatex(.80,.94 , config.lumi)
+    cjm.SaveAs(opt[1]['files'][9])
 
     # Jpsi decay length
     jpsi_dl = params.find("jpsi_dl")
     frame_jpsi_dl = jpsi_dl.frame(ROOT.RooFit.Title(""))
     frame_jpsi_dl.GetXaxis().SetTitle("#l_{J/\psi}\ [mm]")
-
     data_weighted.plotOn(frame_jpsi_dl, ROOT.RooFit.Name("jpsi_dl"), ROOT.RooFit.Name("Data"), ROOT.RooFit.DataError(ROOT.RooAbsData.SumW2))
+
+    # Legend
+    leg_dl = ROOT.TLegend(0.1,0.7,0.27,0.9) #(xsize, ysize, xcoord, ycoord)
+    leg_dl.SetTextSize(0.025)
+    leg_dl.AddEntry(frame_jpsi_dl.findObject("Data"), "Data with sweights", "LEP")
+
+    # Canvas
     can = ROOT.TCanvas("canvas_jpsi_dl", '', 1400, 900)
     frame_jpsi_dl.Draw()
+    leg_dl.Draw("same")
     can.Draw()
 
-    can.SaveAs('splot3d_jpsi_dl.png')
+    # Legend: jpsi dl
+    right = ROOT.TLatex()
+    right.SetNDC()
+    right.SetTextFont(43)
+    right.SetTextSize(50)
+    right.SetTextAlign(13)
+    right.DrawLatex(0.10,.95,"#bf{CMS} #scale[0.7]{#it{Preliminary}}")
+    right.SetTextSize(34)
+    right.DrawLatex(.80,.94 , config.lumi)
+
+    can.SaveAs(opt[1]['files'][10])
 
     # Dstar mass
     dstar_mass = params.find("dstar_mass")
     frame_dstar = dstar_mass.frame(ROOT.RooFit.Title(""))
     frame_dstar.GetXaxis().SetTitle("#M_{K\pi\pi}-M_{K\pi} \ [GeV/c^2]")
     data_weighted.plotOn(frame_dstar, ROOT.RooFit.Name("dstar_mass"), ROOT.RooFit.Name("Data"), ROOT.RooFit.DataError(ROOT.RooAbsData.SumW2))
+    
+    # Legend
+    leg_dstar = ROOT.TLegend(0.1,0.7,0.27,0.9) #(xsize, ysize, xcoord, ycoord)
+    leg_dstar.SetTextSize(0.025)
+    leg_dstar.AddEntry(frame_dstar.findObject("Data"), "Data with sweights", "LEP")
+
     # Canvas for Dstar  
     cpd = ROOT.TCanvas("Dstar Canvas", '', 1400, 900)
     frame_dstar.Draw()
+    leg_dstar.Draw("same")
     cpd.Draw()
 
-    cpd.SaveAs('splot3d_dstar_dmass.png')
+    # Legend: dstar mass
+    right = ROOT.TLatex()
+    right.SetNDC()
+    right.SetTextFont(43)
+    right.SetTextSize(50)
+    right.SetTextAlign(13)
+    right.DrawLatex(0.10,.95,"#bf{CMS} #scale[0.7]{#it{Preliminary}}")
+    right.SetTextSize(34)
+    right.DrawLatex(.80,.94 , config.lumi)
 
-    
-    
-
-    
-
+    cpd.SaveAs(opt[1]['files'][11])
+  
 def yields_jpsidstar(yield_list=config.yield_files):
 
     import csv
@@ -820,7 +877,13 @@ if (args.yields):
     p = yields_jpsidstar()
 
 if (args.splot):
-    splot_jpsidstar()
+    import time
+
+    tstart = time.time()
+    for opt in config.cases.values():
+        splot_jpsidstar(opt)
+    print(f'Finished in: {( time.time() - tstart)} s')
+    
 
 #bot.bot_message(f"3D Fit Finished")
 #bot.bot_image("dstar_mass_projection.png")

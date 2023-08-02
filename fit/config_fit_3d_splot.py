@@ -67,7 +67,10 @@ cases={set : [{'fit_parameters' : {# Jpsi Mass
                                     'fit_plots/' + set + '_Dstar_pull.png',
                                         set +'_wspace', 
                                     'fit_root_files/' + set + '_3Dfit.root',
-                                    'data_root_files/' + set + '.root']}],} 
+                                    'data_root_files/' + set + '.root',
+                                    'fit_plots/' + set + 'splot3d_jpsi_mass.png',
+                                    'fit_plots/' + set + 'splot3d_jpsi_dl.png',
+                                    'fit_plots/' + set + 'splot3d_dstar_dmass.png',]}],} 
 
 # PDFs
 
