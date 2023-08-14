@@ -14,7 +14,9 @@ ROOT.EnableImplicitMT()
 parser = argparse.ArgumentParser(description='JpsiDstar 3D fit')
 parser.add_argument("-f", "--fit", help="Fit the data", action="store_true")
 parser.add_argument("-s", "--splot", help="Splot and weights", action="store_true")
+parser.add_argument("-c", "--coffea", help="Create coffea hists", action="store_true")
 parser.add_argument("-y", "--yields", help="Calculate the yields", action="store_true")
+
 
 args = parser.parse_args()
 
@@ -24,7 +26,7 @@ def fit3DJpsiDstar(opt):
     #file = ROOT.TFile.Open("Charmonium_2017_RunF_HLT_Dimuon25_dl_fit.root")
 
     # Jpsi mass parameter
-    jpsi_mass = ROOT.RooRealVar("jpsi_mass", "Mass Jpsi", 2.95, 3.25)
+    jpsi_mass = ROOT.RooRealVar("jpsi_mass", "", 2.95, 3.25)
 
     # Decay lenght 
     jpsi_dl = ROOT.RooRealVar("jpsi_dl", "", -0.5, 1.4)
@@ -33,7 +35,7 @@ def fit3DJpsiDstar(opt):
     jpsi_dlErr.setConstant(False)
 
     # Dstar mass parameter
-    dstar_mass = ROOT.RooRealVar("dstar_mass", "Dstar Delta m ", 0.13957, 0.16)
+    dstar_mass = ROOT.RooRealVar("dstar_mass", " ", 0.13957, 0.16)
 
     root_data = file.asso
 
@@ -544,6 +546,8 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
     params = sPlotmodel3D.getVariables()
     # Takes the original data
     data = wspace.data("data")
+    """ data_weighted_coffea = data
+    data_weighted = data """
 
     # Takes all yields (signal, background 1, ... , background 7)
     sPlot_signal_frac = params.find("signal_frac")
@@ -556,14 +560,13 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
     sPlot_bkg7_frac = params.find("bkg7_frac") 
    
     # Do splot
-    ROOT.RooStats.SPlot(
+    sData = ROOT.RooStats.SPlot(
     'sData', 'sData', data, sPlotmodel3D,
     ROOT.RooArgList(sPlot_signal_frac, sPlot_bkg1_frac, sPlot_bkg2_frac, sPlot_bkg3_frac, 
                     sPlot_bkg4_frac, sPlot_bkg5_frac, sPlot_bkg6_frac, sPlot_bkg7_frac,))  
     
     # Make the new weight datasets for all signal
-    data_weighted = ROOT.RooDataSet(data.GetName(), data.GetTitle(), data, data.get(), "", "signal_frac_sw")
-
+    data_weighted = ROOT.RooDataSet(data.GetName(), data.GetTitle(), data, data.get(), "", "signal_frac_sw")     
     ## Plots part
 
     # Remove all histograms titles.
@@ -582,6 +585,7 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
 
     # Canvas
     cjm = ROOT.TCanvas("canvas_jpsi_mass", '', 1400, 900)
+    frame_jpsi_mass.SetAxisRange(0.0, 400, axis="Y")
     frame_jpsi_mass.Draw()
     leg_jpsi_mass.Draw("same")
     cjm.Draw()
@@ -599,7 +603,7 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
 
     # Jpsi decay length
     jpsi_dl = params.find("jpsi_dl")
-    frame_jpsi_dl = jpsi_dl.frame(ROOT.RooFit.Title(""))
+    frame_jpsi_dl = jpsi_dl.frame(ROOT.RooFit.Title(""), ROOT.RooFit.Title("") )
     frame_jpsi_dl.GetXaxis().SetTitle("#l_{J/\psi}\ [mm]")
     data_weighted.plotOn(frame_jpsi_dl, ROOT.RooFit.Name("jpsi_dl"), ROOT.RooFit.Name("Data"), ROOT.RooFit.DataError(ROOT.RooAbsData.SumW2))
 
@@ -610,6 +614,8 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
 
     # Canvas
     can = ROOT.TCanvas("canvas_jpsi_dl", '', 1400, 900)
+    frame_jpsi_dl.SetAxisRange(0.1, 5000, axis="Y")
+    frame_jpsi_dl.SetAxisRange(-0.4, 0.4, axis="X")
     frame_jpsi_dl.Draw()
     leg_dl.Draw("same")
     can.Draw()
@@ -623,7 +629,7 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
     right.DrawLatex(0.10,.95,"#bf{CMS} #scale[0.7]{#it{Preliminary}}")
     right.SetTextSize(34)
     right.DrawLatex(.80,.94 , config.lumi)
-
+    can.SetLogy()
     can.SaveAs(opt[1]['files'][10])
 
     # Dstar mass
@@ -639,6 +645,7 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
 
     # Canvas for Dstar  
     cpd = ROOT.TCanvas("Dstar Canvas", '', 1400, 900)
+    frame_dstar.SetAxisRange(0.0, 850, axis="Y")
     frame_dstar.Draw()
     leg_dstar.Draw("same")
     cpd.Draw()
@@ -652,8 +659,41 @@ def splot_jpsidstar(opt, wfile=config.yield_files[0]):
     right.DrawLatex(0.10,.95,"#bf{CMS} #scale[0.7]{#it{Preliminary}}")
     right.SetTextSize(34)
     right.DrawLatex(.80,.94 , config.lumi)
-
+    
+    # Save canvas
     cpd.SaveAs(opt[1]['files'][11])
+
+    ## Coffea - hist part
+    from coffea import processor, hist
+    from coffea.util import save
+    import numpy as np
+    # Takes the root file with the workspace
+    file_root = ROOT.TFile(wfile.replace('_wspace', '') + '_3Dfit.root')
+    # Takes the workspace object
+    wspace = file_root.Get(wfile.replace('fit_root_files/', ''))
+
+    weight = np.ones(len(data_weighted.to_numpy()['jpsi_mass']))
+    for i in range(len(data_weighted.to_numpy()['jpsi_mass'])):
+        weight[i] = weight[i] * sData.GetSWeight(i, "signal_frac_sw")
+        #print(f'weight: {weight[i]}')
+
+    data_weighted = sData.GetSDataSet()
+
+    # Coffea histograms
+    histo = processor.dict_accumulator({'JpsiDstar': processor.dict_accumulator({
+                'Jpsi_mass': hist.Hist("Events", hist.Bin("mass", "$M_{\mu^+\mu^-}$ [GeV/$c^2$]", 100, 2.95, 3.25)), 
+                'Jpsi_dl': hist.Hist("Events", hist.Bin("dl", "decay length", 100, -0.5, 1.4)),
+                'Dstar_deltamr': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("deltamr", "$\Delta m_{refit}$ [$GeV/c^2$]", 100, 0.13957, 0.16)),})})
+    
+    histo['JpsiDstar']['Jpsi_mass'].fill(mass=data_weighted.to_numpy()['jpsi_mass'], weight = weight)
+    histo['JpsiDstar']['Dstar_deltamr'].fill(chg='right charge', deltamr=data_weighted.to_numpy()['dstar_mass'], weight = weight)
+    histo['JpsiDstar']['Jpsi_dl'].fill(dl=data_weighted.to_numpy()['jpsi_dl'], weight = weight)
+
+    save(histo, 'Charmonium_' + config.set[10:14] + '_sweight.coffea')
+
+    return data_weighted, sData
   
 def yields_jpsidstar(yield_list=config.yield_files):
 
@@ -884,6 +924,13 @@ if (args.splot):
         splot_jpsidstar(opt)
     print(f'Finished in: {( time.time() - tstart)} s')
     
+if (args.coffea):
+    import time
+
+    tstart = time.time()
+    for opt in config.cases.values():
+        make_coffea_hist(opt)
+    print(f'Finished in: {( time.time() - tstart)} s')
 
 #bot.bot_message(f"3D Fit Finished")
 #bot.bot_image("dstar_mass_projection.png")
