@@ -19,12 +19,21 @@ To run you simply do: python3 merge_data.py
 ## next version: era_list is going to be a dict with key being Erax and value being n_size!!!!!!!
 
 # List with eras to run
-era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',]
-era_list=['sps']
 
+#era_list=['RunB_HIPM', 'RunC_HIPM', 'RunD_HIPM', 'RunE_HIPM', 'RunF_HIPM',] # 2016-pre-VFP
+#era_list=['RunF',] # 2016-pos-VFP
+#era_list=['RunG', 'RunH']
+#era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
+era_list=['dps_9to30',]
+
+#era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
+#era_list=['dps_9to30']
+
+#era_list=['RunA','RunB', 'RunC', 'RunD'] # 2018
+#era_list=['RunD',] # 2018
 # Number of chunks to divide the file list
-n_size = 10
+n_size = 8
 
 # Path where the files produced by condor are stored.
-path = '/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_data/analysis_fit/data/' 
+path = '/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_data/analysis_fit/data/2018/' 
 

@@ -102,7 +102,7 @@ def create_root(accumulator, path_output, era, bin, condition=None):
 
     # Taks the accumulator and the trigger name
     acc, trigger_name = accumulator
-    xsec_weight = config.xsec_weight
+    nevts_data = config.nevts_data
     #for b in bin:
 
     # If the option is 'no_trigger' it will take the original accumulator that comes from the
@@ -177,11 +177,11 @@ def create_root(accumulator, path_output, era, bin, condition=None):
             jpsi_dstar_deltarap = acc['DimuDstar']['dimu_dstar_deltarap'].value
 
         
+        xsec_weight = nevts_data/len(all_asso_jpsi_mass)
+        weight = np.full_like(all_asso_jpsi_mass, xsec_weight)
+
+        print(f'weight: {xsec_weight}')
         
-
-        weight_xsec = np.full_like(all_asso_jpsi_dl, xsec_weight)
-
-
         ## Applying weighs
 
         """ dstar_mass = np.repeat(dstar_mass, xsec_weight)
@@ -222,7 +222,7 @@ def create_root(accumulator, path_output, era, bin, condition=None):
                                       "jpsi_rap": "float32",
                                       "jpsi_dl": "float32",
                                       "jpsi_dlErr": "float32",
-                                      "weight_xsec": "float32",})
+                                      "weight": "float32",})
         ds['asso'].extend({"dstar_mass": dstar_mass, 
                            "dstar_pt": dstar_pt, 
                            "dstar_rap": dstar_rap,   
@@ -233,7 +233,8 @@ def create_root(accumulator, path_output, era, bin, condition=None):
                            "jpsi_rap": all_asso_jpsi_rap,
                            "jpsi_dl": all_asso_jpsi_dl,
                            "jpsi_dlErr": all_asso_jpsi_dl_err,
-                           "weight_xsec": weight_xsec,})
+                           "weight": weight,})
+        
         if 'dps' in era or 'sps' in era:
 
             ds['obje'] = uproot3.newtree({"jpsi_dstar_deltarap": "float32", })

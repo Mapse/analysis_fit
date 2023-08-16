@@ -111,14 +111,53 @@ class TriggerProcessor(processor.ProcessorABC):
                 'Dstar_deltamr': hist.Hist("Events", 
                                         hist.Cat("chg", "charge"), 
                                         hist.Bin("deltamr", "$\Delta m_{refit}$ [$GeV/c^2$]", 50, 0.138, 0.162)),
+                'Dstar_D0pt': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("d0pt", "D$^0$ from D$^*$ - p$_{T}$ [GeV/c]", 80, 0, 80)),
+                'Dstar_D0cosphi': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("d0cosphi", "D$^0$ from D$^*$ - pointing angle", 120, 0.9, 1)),
+                'Dstar_D0dl': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("d0dl", "D$^0$ from D$^*$ - Decay length [mm]", 80, 0, 2)),
+                'Dstar_D0dlSig': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("d0dlsig", "D$^0$ from D$^*$ - Decay length significance", 120, 0, 50)),
+                'Dstar_Kpt': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("kpt", "K from D$^*$ - p$_{T}$ [GeV/c]", 80, 0, 100)),
+                'Dstar_Kchindof': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("kchindof", "K from D$^*$  - reduced $\chi^2$", 60, 0, 10)),
+                'Dstar_KnValid': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("knvalid", "K from D$^*$ - tracker hits", 80, 0, 30)),
+                'Dstar_Kdxy': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("kdxy", "K from D$^*$ - dxy ", 60, 0, 5)),
+                'Dstar_Kdz': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("kdz", "K from D$^*$ - dz", 80, 0, 10)),
+                'Dstar_pispt': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("pispt", "$\pi_s$ from D$^*$ - p_{T}$ [GeV/c]", 60, 0, 30)),
+                'Dstar_pischindof': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("pischindof", "$\pi_s$ from D$^*$ - reduced $\chi^2$", 60, 0, 10)),
+                'Dstar_pisnValid': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("pisnValid", "$\pi_s$ from D$^*$ - tracker hits", 80, 0, 30)),
+                    
             }),
         })
         
+ 
+
     @property
     def accumulator(self):
         return self._accumulator
      
-    def process(self, acc, path_output, era, mode, counter):
+    def process(self, acc, path_output, era, mode, counter, bin):
 
         '''
 
@@ -133,266 +172,312 @@ class TriggerProcessor(processor.ProcessorABC):
         It returns the final accumulator.
 
         '''
-        # Creates the output
-        output = self.accumulator.identity()
+        
+        for b in bin:
+            # Creates the output
+            output = self.accumulator.identity()
+        
+            # Opens the accumulator for each object (particles, vertices, trigger...)
+            #Muon_lead_acc = acc['Muon_lead']
+            #Muon_trail_acc = acc['Muon_trail']
+            #Dimu_acc = acc['Dimu']
+            #Dstar_acc = acc['Dstar']
+            #Dstar_D0_acc = acc['Dstar_D0']
+            #Dstar_trk_acc = acc['Dstar_trk']
+            DimuDstar_acc = acc['DimuDstar']
+            #PVtx = acc['PVtx'] 
+            HLT_acc = acc[config.hlt_year]
+            DimuDstar_p4 = build_p4(DimuDstar_acc)   
+
+            ## Muon lead collection
+
+            # Creates the pt, eta, phi, m lorentz vector.
+            """ Muon_lead = ak.zip({
+                'pt' : Muon_lead_acc['pt'].value,
+                'eta' : Muon_lead_acc['eta'].value,
+                'phi' : Muon_lead_acc['phi'].value,}, with_name='PtEtaPhiMCandidate')
+            # Uses unflatten with the number of Dimuon in order to apply trigger correction
+            Muon_lead = ak.unflatten(Muon_lead, Muon_lead_acc['nMuon'].value) """
+
+            ## Muon trail collection
+
+            # Creates the pt, eta, phi, m lorentz vector.
+            """ Muon_trail = ak.zip({
+                'pt' : Muon_trail_acc['pt'].value,
+                'eta' : Muon_trail_acc['eta'].value,
+                'phi' : Muon_trail_acc['phi'].value,}, with_name='PtEtaPhiMCandidate')
+            # Uses unflatten with the number of Dimuon in order to apply trigger correction
+            Muon_trail = ak.unflatten(Muon_trail, Muon_trail_acc['nMuon'].value) """
+
+            ## Dimuon collection
+
+            # Creates the pt, eta, phi, m lorentz vector.
+            """ Dimu = ak.zip({
+                'pt': Dimu_acc['pt'].value,
+                'eta': Dimu_acc['eta'].value,
+                'phi': Dimu_acc['phi'].value,
+                'mass': Dimu_acc['mass'].value,
+                'rap': Dimu_acc['rap'].value,
+                'dl': Dimu_acc['dl'].value,
+                'dlSig': Dimu_acc['dlSig'].value,
+                'chi2': Dimu_acc['chi2'].value,
+                'cosphi': Dimu_acc['cosphi'].value,
+                'is_jpsi' : Dimu_acc['is_jpsi'].value,}, with_name="PtEtaPhiMLorentzVector") 
+
+            # Uses unflatten with the number of Dimuon in order to apply trigger correction
+            Dimu = ak.unflatten(Dimu, Dimu_acc['nDimu'].value)"""
     
-        # Opens the accumulator for each object (particles, vertices, trigger...)
-        #Muon_lead_acc = acc['Muon_lead']
-        #Muon_trail_acc = acc['Muon_trail']
-        #Dimu_acc = acc['Dimu']
-        #Dstar_acc = acc['Dstar']
-        #Dstar_D0_acc = acc['Dstar_D0']
-        #Dstar_trk_acc = acc['Dstar_trk']
-        DimuDstar_acc = acc['DimuDstar']
-        #Primary_vertex_acc = acc['Primary_vertex'] 
-        HLT_acc = acc[config.hlt_year]
-        DimuDstar_p4 = build_p4(DimuDstar_acc)     
+            ## Dstar collection
 
-        ## Muon lead collection
+            # Creates the pt, eta, phi, m lorentz vector.
+            """ Dstar = ak.zip({
+                'pt' : Dstar_acc['pt'].value,
+                'eta' : Dstar_acc['eta'].value,
+                'phi' : Dstar_acc['phi'].value,
+                'mass' : Dstar_acc['mass'].value,
+                'rap': Dstar_acc['rap'].value,
+                'charge' : Dstar_acc['charge'].value,
+                'deltam' : Dstar_acc['deltam'].value,
+                'deltamr' : Dstar_acc['deltamr'].value,
+                'D0cosphi' : Dstar_D0_acc['D0cosphi'].value,
+                'D0dlSig' : Dstar_D0_acc['D0dlSig'].value,
+                'D0pt': Dstar_D0_acc['D0pt'].value,
+                'wrg_chg' : Dstar_acc['wrg_chg'].value}, with_name='PtEtaPhiMCandidate') 
 
-        # Creates the pt, eta, phi, m lorentz vector.
-        """ Muon_lead = ak.zip({
-            'pt' : Muon_lead_acc['pt'].value,
-            'eta' : Muon_lead_acc['eta'].value,
-            'phi' : Muon_lead_acc['phi'].value,}, with_name='PtEtaPhiMCandidate')
-        # Uses unflatten with the number of Dimuon in order to apply trigger correction
-        Muon_lead = ak.unflatten(Muon_lead, Muon_lead_acc['nMuon'].value) """
+            # Uses unflatten with the number of Dimuon in order to apply trigger correction
+            Dstar = ak.unflatten(Dstar, Dstar_acc['nDstar'].value) """
 
-        ## Muon trail collection
+            #print(dir(DimuDstar_p4))
 
-        # Creates the pt, eta, phi, m lorentz vector.
-        """ Muon_trail = ak.zip({
-            'pt' : Muon_trail_acc['pt'].value,
-            'eta' : Muon_trail_acc['eta'].value,
-            'phi' : Muon_trail_acc['phi'].value,}, with_name='PtEtaPhiMCandidate')
-        # Uses unflatten with the number of Dimuon in order to apply trigger correction
-        Muon_trail = ak.unflatten(Muon_trail, Muon_trail_acc['nMuon'].value) """
+            ## DimuDstar collection
 
-        ## Dimuon collection
-
-        # Creates the pt, eta, phi, m lorentz vector.
-        """ Dimu = ak.zip({
-            'pt': Dimu_acc['pt'].value,
-            'eta': Dimu_acc['eta'].value,
-            'phi': Dimu_acc['phi'].value,
-            'mass': Dimu_acc['mass'].value,
-            'rap': Dimu_acc['rap'].value,
-            'dl': Dimu_acc['dl'].value,
-            'dlSig': Dimu_acc['dlSig'].value,
-            'chi2': Dimu_acc['chi2'].value,
-            'cosphi': Dimu_acc['cosphi'].value,
-            'is_jpsi' : Dimu_acc['is_jpsi'].value,}, with_name="PtEtaPhiMLorentzVector") 
-
-        # Uses unflatten with the number of Dimuon in order to apply trigger correction
-        Dimu = ak.unflatten(Dimu, Dimu_acc['nDimu'].value)"""
- 
-        ## Dstar collection
-
-        # Creates the pt, eta, phi, m lorentz vector.
-        """ Dstar = ak.zip({
-            'pt' : Dstar_acc['pt'].value,
-            'eta' : Dstar_acc['eta'].value,
-            'phi' : Dstar_acc['phi'].value,
-            'mass' : Dstar_acc['mass'].value,
-            'rap': Dstar_acc['rap'].value,
-            'charge' : Dstar_acc['charge'].value,
-            'deltam' : Dstar_acc['deltam'].value,
-            'deltamr' : Dstar_acc['deltamr'].value,
-            'D0cosphi' : Dstar_D0_acc['D0cosphi'].value,
-            'D0dlSig' : Dstar_D0_acc['D0dlSig'].value,
-            'D0pt': Dstar_D0_acc['D0pt'].value,
-            'wrg_chg' : Dstar_acc['wrg_chg'].value}, with_name='PtEtaPhiMCandidate') 
-
-        # Uses unflatten with the number of Dimuon in order to apply trigger correction
-        Dstar = ak.unflatten(Dstar, Dstar_acc['nDstar'].value) """
-
-        #print(dir(DimuDstar_p4))
-
-        ## DimuDstar collection
-
-        # Creates the pt, eta, phi, m lorentz vector.
-        DimuDstar = ak.zip({
-            'jpsi_mass' : DimuDstar_acc['Dimu']['mass'].value,
-            'jpsi_pt' : DimuDstar_acc['Dimu']['pt'].value,
-            'jpsi_eta' : DimuDstar_acc['Dimu']['eta'].value,
-            'jpsi_phi' : DimuDstar_acc['Dimu']['phi'].value,
-            'jpsi_rap' : DimuDstar_acc['Dimu']['rap'].value,
-            'jpsi_dl' : DimuDstar_acc['Dimu']['dl'].value,
-            'jpsi_dlErr' : DimuDstar_acc['Dimu']['dlErr'].value,
-            'jpsi_dlsig' : DimuDstar_acc['Dimu']['dlSig'].value,
-            'dstar_deltam' : DimuDstar_acc['Dstar']['deltam'].value,
-            'dstar_deltamr' : DimuDstar_acc['Dstar']['deltamr'].value,
-            'dstar_pt' : DimuDstar_acc['Dstar']['pt'].value,
-            'dstar_eta' : DimuDstar_acc['Dstar']['eta'].value,
-            'dstar_phi' : DimuDstar_acc['Dstar']['phi'].value,
-            'dstar_rap' : DimuDstar_acc['Dstar']['rap'].value,
-            'associationProb' : DimuDstar_acc['Dstar']['associationProb'].value,            
-            'dimu_dstar_deltarap' : DimuDstar_acc['deltarap'].value,
-            'dimu_dstar_mass' : DimuDstar_p4.mass, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
-            'dimu_dstar_pt' : DimuDstar_p4.pt, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
-            'is_jpsi' : DimuDstar_acc['Dimu']['is_jpsi'].value,
-            'wrg_chg': DimuDstar_acc['Dstar']['wrg_chg'].value,}, with_name='PtEtaPhiMCandidate')  
-        
-        DimuDstar['dimu_dstar_deltaphi'] = np.remainder(np.abs(DimuDstar.jpsi_phi - DimuDstar.dstar_phi), np.pi)
-        
-        DimuDstar = ak.unflatten(DimuDstar, DimuDstar_acc['nDimuDstar'].value)
-
-        hlt_filter = config.hlt_filter
-
-        print(f"You are running with the trigger(s): {hlt_filter}")
-        
-        # Loop over trigger list. Applies OR condition to the trigger selection.
-        trigger_cut = HLT_acc[hlt_filter[0]].value
-        for i in range(0, len(hlt_filter)):
-            trigger_cut |= HLT_acc[hlt_filter[i]].value
-
-        # Muon lead collection
-        #Muon_lead = Muon_lead[trigger_cut]
+            # Creates the pt, eta, phi, m lorentz vector.
+            DimuDstar = ak.zip({
+                'jpsi_mass' : DimuDstar_acc['Dimu']['mass'].value,
+                'jpsi_pt' : DimuDstar_acc['Dimu']['pt'].value,
+                'jpsi_eta' : DimuDstar_acc['Dimu']['eta'].value,
+                'jpsi_phi' : DimuDstar_acc['Dimu']['phi'].value,
+                'jpsi_rap' : DimuDstar_acc['Dimu']['rap'].value,
+                'jpsi_dl' : DimuDstar_acc['Dimu']['dl'].value,
+                'jpsi_dlErr' : DimuDstar_acc['Dimu']['dlErr'].value,
+                'jpsi_dlsig' : DimuDstar_acc['Dimu']['dlSig'].value,
+                'dstar_deltam' : DimuDstar_acc['Dstar']['deltam'].value,
+                'dstar_deltamr' : DimuDstar_acc['Dstar']['deltamr'].value,
+                'dstar_pt' : DimuDstar_acc['Dstar']['pt'].value,
+                'dstar_eta' : DimuDstar_acc['Dstar']['eta'].value,
+                'dstar_phi' : DimuDstar_acc['Dstar']['phi'].value,
+                'dstar_rap' : DimuDstar_acc['Dstar']['rap'].value,
+                'dstar_d0pt' : DimuDstar_acc['Dstar']['D0pt'].value,
+                'dstar_d0cosphi' : DimuDstar_acc['Dstar']['D0cosphi'].value,
+                'dstar_d0dl' : DimuDstar_acc['Dstar']['D0dl'].value,
+                'dstar_d0dlsig' : DimuDstar_acc['Dstar']['D0dlSig'].value,
+                'dstar_Kpt' : DimuDstar_acc['Dstar']['Kpt'].value,
+                'dstar_Kchindof' : DimuDstar_acc['Dstar']['Kchindof'].value,
+                'dstar_KnValid' : DimuDstar_acc['Dstar']['KnValid'].value,
+                'dstar_Kdxy' : DimuDstar_acc['Dstar']['Kdxy'].value,
+                'dstar_pidxy' : DimuDstar_acc['Dstar']['pidxy'].value,
+                'dstar_Kdz' : DimuDstar_acc['Dstar']['Kdz'].value,
+                'dstar_pispt' : DimuDstar_acc['Dstar']['pispt'].value,
+                'dstar_pischindof' : DimuDstar_acc['Dstar']['pischindof'].value,
+                'dstar_pisnValid' : DimuDstar_acc['Dstar']['pisnValid'].value,
+                'associationProb' : DimuDstar_acc['Dstar']['associationProb'].value,            
+                'dimu_dstar_deltarap' : DimuDstar_acc['deltarap'].value,
+                'dimu_dstar_deltapt' : DimuDstar_acc['deltapt'].value,
+                'dimu_dstar_deltaeta' : DimuDstar_acc['deltaeta'].value,
+                'dimu_dstar_deltaphi' : DimuDstar_acc['deltaphi'].value,                
+                'dimu_dstar_mass' : DimuDstar_p4.mass, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
+                'dimu_dstar_pt' : DimuDstar_p4.pt, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
+                'is_jpsi' : DimuDstar_acc['Dimu']['is_jpsi'].value,
+                'wrg_chg': DimuDstar_acc['Dstar']['wrg_chg'].value,}, with_name='PtEtaPhiMCandidate')  
             
-        # Muon trail collection
-        #Muon_trail = Muon_trail[trigger_cut]
+            DimuDstar = ak.unflatten(DimuDstar, DimuDstar_acc['nDimuDstar'].value)
 
-        # Jpsi collection
-        #Dimu = Dimu[trigger_cut]
+            hlt_filter = config.hlt_filter
 
-       #Dimu = Dimu[(Dimu.pt > 30) & (Dimu.pt < 50)]
-        
-        # Dstar collection
-        #Dstar = Dstar[trigger_cut]
+            print(f"You are running with the trigger(s): {hlt_filter}")
+            
+            # Loop over trigger list. Applies OR condition to the trigger selection.
+            trigger_cut = HLT_acc[hlt_filter[0]].value
+            for i in range(0, len(hlt_filter)):
+                trigger_cut |= HLT_acc[hlt_filter[i]].value
 
-        ## DimuDstar collection
+            # Muon lead collection
+            #Muon_lead = Muon_lead[trigger_cut]
+                
+            # Muon trail collection
+            #Muon_trail = Muon_trail[trigger_cut]
 
-        # Trigger cut
-        DimuDstar = DimuDstar[trigger_cut]
+            # Jpsi collection
+            #Dimu = Dimu[trigger_cut]
 
-        DimuDstar = DimuDstar[(DimuDstar.jpsi_pt > config.ptmin) & (DimuDstar.jpsi_pt < config.ptmax)]
-        print(f'pT min: {config.ptmin}')
-        print(f'pT max: {config.ptmax}')
+            #Dimu = Dimu[(Dimu.pt > 30) & (Dimu.pt < 50)]
+            
+            # Dstar collection
+            #Dstar = Dstar[trigger_cut]
 
-        #DimuDstar = DimuDstar[(DimuDstar.dimu_dstar_mass > 4) & (DimuDstar.dimu_dstar_mass < 8)]
-        #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 20 ]
+            ## DimuDstar collection
 
-        #DimuDstar = DimuDstar[DimuDstar.jpsi_dl < 0.06]
+            # Trigger cut
+            DimuDstar = DimuDstar[trigger_cut]
 
-        DimuDstar = DimuDstar[np.absolute(DimuDstar.jpsi_rap) < 1.2]
-        DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
-        #print(DimuDstar.jpsi_eta)
+            DimuDstar = DimuDstar[(DimuDstar.jpsi_pt > config.bin[b][0]) & (DimuDstar.jpsi_pt < config.bin[b][1])]
+            print(f'pT min: {bin[b][0]}')
+            print(f'pT max: {bin[b][1]}')
 
-        # vtx prob cut 
-        #DimuDstar = DimuDstar[DimuDstar.associationProb > 0.05]
+            #DimuDstar = DimuDstar[(DimuDstar.dimu_dstar_mass > 4) & (DimuDstar.dimu_dstar_mass < 8)]
+            #DimuDstar = DimuDstar[(DimuDstar.dstar_pt > 4) & (DimuDstar.dstar_pt < 60)]
+            #DimuDstar = DimuDstar[DimuDstar.jpsi_dl < 0.06]
 
-        # To fill histograms
+            #DimuDstar = DimuDstar[np.absolute(DimuDstar.jpsi_rap) < 1.2]
+            #DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
+            #print(DimuDstar.jpsi_eta)
 
-        jpsi_mass = ak.flatten(DimuDstar.jpsi_mass)
-        jpsi_pt = ak.flatten(DimuDstar.jpsi_pt)
-        jpsi_eta = ak.flatten(DimuDstar.jpsi_eta)
-        jpsi_phi = ak.flatten(DimuDstar.jpsi_phi)
-        jpsi_rap = ak.flatten(DimuDstar.jpsi_rap)
-        jpsi_dlsig = ak.flatten(DimuDstar.jpsi_dlsig)
-        jpsi_dl = ak.flatten(DimuDstar.jpsi_dl)
-        dstar_deltamr = ak.flatten(DimuDstar.dstar_deltamr)
-        dstar_pt = ak.flatten(DimuDstar.dstar_pt)
-        dstar_eta = ak.flatten(DimuDstar.dstar_eta)
-        dstar_phi = ak.flatten(DimuDstar.dstar_phi)
-        dstar_rap = ak.flatten(DimuDstar.dstar_rap)
-        jpsi_dstar_deltarap = ak.flatten(DimuDstar.dimu_dstar_deltarap)
-        jpsi_dstar_deltaphi= ak.flatten(DimuDstar.dimu_dstar_deltaphi)
-        jpsi_dstar_mass = ak.flatten(DimuDstar.dimu_dstar_mass) 
-        jpsi_dstar_pt = ak.flatten(DimuDstar.dimu_dstar_pt) 
+            # vtx prob cut 
+            DimuDstar = DimuDstar[DimuDstar.associationProb > 0.05]
+            #DimuDstar = DimuDstar[(DimuDstar.dstar_Kdxy < 0.5) & (DimuDstar.dstar_pidxy < 0.5)]
+            #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 20]
 
-        """muon_lead_acc = processor.dict_accumulator({})
-        for var in Muon_lead.fields:
-            muon_lead_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Muon_lead[var])))
-        muon_lead_acc["nMuon"] = processor.column_accumulator(ak.to_numpy(ak.num(Muon_lead)))
-        output["Muon_lead"] = muon_lead_acc
+            ## To fill histograms
 
-        muon_trail_acc = processor.dict_accumulator({})
-        for var in Muon_trail.fields:
-            muon_trail_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Muon_trail[var])))
-        muon_trail_acc["nMuon"] = processor.column_accumulator(ak.to_numpy(ak.num(Muon_trail)))
-        output["Muon_trail"] = muon_trail_acc
+            # Jpsi variables
+            jpsi_mass = ak.flatten(DimuDstar.jpsi_mass)
+            jpsi_pt = ak.flatten(DimuDstar.jpsi_pt)
+            jpsi_eta = ak.flatten(DimuDstar.jpsi_eta)
+            jpsi_phi = ak.flatten(DimuDstar.jpsi_phi)
+            jpsi_rap = ak.flatten(DimuDstar.jpsi_rap)
+            jpsi_dlsig = ak.flatten(DimuDstar.jpsi_dlsig)
+            jpsi_dl = ak.flatten(DimuDstar.jpsi_dl)
+            # Dstar variables
+            dstar_deltamr = ak.flatten(DimuDstar.dstar_deltamr)
+            dstar_pt = ak.flatten(DimuDstar.dstar_pt)
+            dstar_eta = ak.flatten(DimuDstar.dstar_eta)
+            dstar_phi = ak.flatten(DimuDstar.dstar_phi)
+            dstar_rap = ak.flatten(DimuDstar.dstar_rap)
+            dstar_d0pt = ak.flatten(DimuDstar.dstar_d0pt)
+            dstar_d0cosphi = ak.flatten(DimuDstar.dstar_d0cosphi)
+            dstar_d0dl = ak.flatten(DimuDstar.dstar_d0dl)
+            dstar_d0dlsig = ak.flatten(DimuDstar.dstar_d0dlsig)
+            dstar_Kpt = ak.flatten(DimuDstar.dstar_Kpt)
+            dstar_Kchindof = ak.flatten(DimuDstar.dstar_Kchindof)
+            dstar_KnValid = ak.flatten(DimuDstar.dstar_KnValid)
+            dstar_Kdxy = ak.flatten(DimuDstar.dstar_Kdxy)
+            dstar_Kdz = ak.flatten(DimuDstar.dstar_Kdz)
+            dstar_pispt = ak.flatten(DimuDstar.dstar_pispt)
+            dstar_pischindof = ak.flatten(DimuDstar.dstar_pischindof)
+            dstar_pisnValid = ak.flatten(DimuDstar.dstar_pisnValid)
 
-        dimu_acc = processor.dict_accumulator({})
-        for var in Dimu.fields:
-            if (var.startswith('t')): continue
-            dimu_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dimu[var])))
-        dimu_acc["nDimu"] = processor.column_accumulator(ak.to_numpy(ak.num(Dimu)))
-        output["Dimu"] = dimu_acc"""
+            # JpsiDstar variables
+            jpsi_dstar_deltarap = ak.flatten(DimuDstar.dimu_dstar_deltarap)
+            jpsi_dstar_deltaphi= ak.flatten(DimuDstar.dimu_dstar_deltaphi)
+            jpsi_dstar_mass = ak.flatten(DimuDstar.dimu_dstar_mass) 
+            jpsi_dstar_pt = ak.flatten(DimuDstar.dimu_dstar_pt) 
+  
+            """muon_lead_acc = processor.dict_accumulator({})
+            for var in Muon_lead.fields:
+                muon_lead_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Muon_lead[var])))
+            muon_lead_acc["nMuon"] = processor.column_accumulator(ak.to_numpy(ak.num(Muon_lead)))
+            output["Muon_lead"] = muon_lead_acc
 
-        """Dstar_acc = processor.dict_accumulator({})
-        Dstar_D0_acc = processor.dict_accumulator({})
-        Dstar_trk_acc = processor.dict_accumulator({})
-        for var in Dstar.fields:
-            if var.startswith('D0'):
-                Dstar_D0_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dstar[var])))
-            elif (var.startswith('K') or var.startswith('pi')):
-                Dstar_trk_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dstar[var])))
-            else:
-                Dstar_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dstar[var])))
-        Dstar_acc["nDstar"] = processor.column_accumulator(ak.to_numpy(ak.num(Dstar)))
-        output["Dstar"] = Dstar_acc
-        output["Dstar_D0"] = Dstar_D0_acc
-        output["Dstar_trk"] = Dstar_trk_acc"""
+            muon_trail_acc = processor.dict_accumulator({})
+            for var in Muon_trail.fields:
+                muon_trail_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Muon_trail[var])))
+            muon_trail_acc["nMuon"] = processor.column_accumulator(ak.to_numpy(ak.num(Muon_trail)))
+            output["Muon_trail"] = muon_trail_acc
 
-        DimuDstar_acc = processor.dict_accumulator({})
-        DimuDstar_acc['Dimu'] = processor.dict_accumulator({})
-        DimuDstar_acc['Dstar'] = processor.dict_accumulator({})
-        for var in DimuDstar.fields:
-            if (var == '0') or (var =='1'):
-                continue
-            elif var == 'cand':
-                for i0 in DimuDstar[var].fields:
-                    DimuDstar_acc[i0] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar[var][i0])))
-            else:
-                DimuDstar_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar[var])))
+            dimu_acc = processor.dict_accumulator({})
+            for var in Dimu.fields:
+                if (var.startswith('t')): continue
+                dimu_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dimu[var])))
+            dimu_acc["nDimu"] = processor.column_accumulator(ak.to_numpy(ak.num(Dimu)))
+            output["Dimu"] = dimu_acc"""
 
-        for var in DimuDstar.slot0.fields:
-            DimuDstar_acc['Dimu'][var] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar.slot0[var])))
+            """Dstar_acc = processor.dict_accumulator({})
+            Dstar_D0_acc = processor.dict_accumulator({})
+            Dstar_trk_acc = processor.dict_accumulator({})
+            for var in Dstar.fields:
+                if var.startswith('D0'):
+                    Dstar_D0_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dstar[var])))
+                elif (var.startswith('K') or var.startswith('pi')):
+                    Dstar_trk_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dstar[var])))
+                else:
+                    Dstar_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(Dstar[var])))
+            Dstar_acc["nDstar"] = processor.column_accumulator(ak.to_numpy(ak.num(Dstar)))
+            output["Dstar"] = Dstar_acc
+            output["Dstar_D0"] = Dstar_D0_acc
+            output["Dstar_trk"] = Dstar_trk_acc"""
 
-        for var in DimuDstar.slot1.fields:
-            DimuDstar_acc['Dstar'][var] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar.slot1[var])))
-        DimuDstar_acc['nDimuDstar'] = processor.column_accumulator(ak.to_numpy(ak.num(DimuDstar)))
-        output['DimuDstar'] = DimuDstar_acc 
+            DimuDstar_acc = processor.dict_accumulator({})
+            DimuDstar_acc['Dimu'] = processor.dict_accumulator({})
+            DimuDstar_acc['Dstar'] = processor.dict_accumulator({})
+            for var in DimuDstar.fields:
+                if (var == '0') or (var =='1'):
+                    continue
+                elif var == 'cand':
+                    for i0 in DimuDstar[var].fields:
+                        DimuDstar_acc[i0] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar[var][i0])))
+                else:
+                    DimuDstar_acc[var] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar[var])))
 
-        # Name to the file based on the trigger.
-        hlt_name = hlt_filter[0][0:12]
+            for var in DimuDstar.slot0.fields:
+                DimuDstar_acc['Dimu'][var] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar.slot0[var])))
 
-        ## Histograms
+            for var in DimuDstar.slot1.fields:
+                DimuDstar_acc['Dstar'][var] = processor.column_accumulator(ak.to_numpy(ak.flatten(DimuDstar.slot1[var])))
+            DimuDstar_acc['nDimuDstar'] = processor.column_accumulator(ak.to_numpy(ak.num(DimuDstar)))
+            output['DimuDstar'] = DimuDstar_acc 
 
-        # JpsiDstar
-        output['JpsiDstar']['Jpsi_mass'].fill(mass=jpsi_mass)
-        output['JpsiDstar']['Jpsi_p'].fill(pt=jpsi_pt,
-                                           eta=jpsi_eta,
-                                           phi=jpsi_phi)
-        output['JpsiDstar']['Jpsi_rap'].fill(rap=jpsi_rap)
-        output['JpsiDstar']['Jpsi_dlSig'].fill(dlSig=jpsi_dlsig)
-        output['JpsiDstar']['Jpsi_dl'].fill(dl=jpsi_dl)
+            # Name to the file based on the trigger.
+            hlt_name = hlt_filter[0][0:12]
 
-        output['JpsiDstar']['Dstar_deltamr'].fill(chg='right charge', deltamr=dstar_deltamr)
-        output['JpsiDstar']['Dstar_p'].fill(chg='right charge',
-                                            pt=dstar_pt,
-                                            eta=dstar_eta,
-                                            phi=dstar_phi)
-        
-        output['JpsiDstar']['Dstar_rap'].fill(chg='right charge', rap=dstar_rap)
+            ## Histograms
 
-        output['JpsiDstar']['JpsiDstar_deltarap'].fill(deltarap=jpsi_dstar_deltarap)
-        output['JpsiDstar']['JpsiDstar_deltaphi'].fill(deltaphi=jpsi_dstar_deltaphi)
-        output['JpsiDstar']['JpsiDstar_mass'].fill(mass=jpsi_dstar_mass)
-        output['JpsiDstar']['JpsiDstar_pt'].fill(pt=jpsi_dstar_pt)
+            # Jpsi 
+            output['JpsiDstar']['Jpsi_mass'].fill(mass=jpsi_mass,)
+            output['JpsiDstar']['Jpsi_p'].fill(pt=jpsi_pt,
+                                            eta=jpsi_eta,
+                                            phi=jpsi_phi,)
+            output['JpsiDstar']['Jpsi_rap'].fill(rap=jpsi_rap,)
+            output['JpsiDstar']['Jpsi_dlSig'].fill(dlSig=jpsi_dlsig,)
+            output['JpsiDstar']['Jpsi_dl'].fill(dl=jpsi_dl,)
 
-        if mode == 'sum':
-            print('Saving accumulator...')
-            save(output, path_output + '/' + era + '_' + hlt_name + '.coffea')
+            # Dstar
+            output['JpsiDstar']['Dstar_deltamr'].fill(chg='right charge', deltamr=dstar_deltamr,)
+            output['JpsiDstar']['Dstar_p'].fill(chg='right charge',
+                                                pt=dstar_pt,
+                                                eta=dstar_eta,
+                                                phi=dstar_phi,)
+            output['JpsiDstar']['Dstar_rap'].fill(chg='right charge', rap=dstar_rap,)
+            output['JpsiDstar']['Dstar_D0pt'].fill(chg='right charge', d0pt=dstar_d0pt,)
+            output['JpsiDstar']['Dstar_D0cosphi'].fill(chg='right charge', d0cosphi=dstar_d0cosphi,)
+            output['JpsiDstar']['Dstar_D0dl'].fill(chg='right charge', d0dl=dstar_d0dl,)
+            output['JpsiDstar']['Dstar_D0dlSig'].fill(chg='right charge', d0dlsig=dstar_d0dlsig,)
+            output['JpsiDstar']['Dstar_Kpt'].fill(chg='right charge', kpt=dstar_Kpt,)
+            output['JpsiDstar']['Dstar_Kchindof'].fill(chg='right charge', kchindof=dstar_Kchindof,)
+            output['JpsiDstar']['Dstar_KnValid'].fill(chg='right charge', knvalid=dstar_KnValid,)
+            output['JpsiDstar']['Dstar_Kdxy'].fill(chg='right charge', kdxy=dstar_Kdxy,)
+            output['JpsiDstar']['Dstar_Kdz'].fill(chg='right charge', kdz=dstar_Kdz,)
+            output['JpsiDstar']['Dstar_pispt'].fill(chg='right charge', pispt=dstar_pispt,)
+            output['JpsiDstar']['Dstar_pischindof'].fill(chg='right charge', pischindof=dstar_pischindof,)
+            output['JpsiDstar']['Dstar_pisnValid'].fill(chg='right charge', pisnValid=dstar_pisnValid,)
 
-        elif mode == 'several':
-            print(f'Saving file: ')
-            if config.cate == '':
-                print(era + '_' + hlt_name + '_' + config.cate + str(counter) + '.coffea')
-                save(output, path_output + '/' + era + '_' + hlt_name + config.cate + '_' + str(counter) + '.coffea')
-            else:
-                print(era + '_' + hlt_name + '_' + config.cate + '_' + str(counter) + '.coffea')
-                save(output, path_output + '/' + era + '_' + hlt_name + '_' + config.cate + '_' + str(counter) + '.coffea')
+            # JpsiDstar
+            output['JpsiDstar']['JpsiDstar_deltarap'].fill(deltarap=jpsi_dstar_deltarap,)
+            output['JpsiDstar']['JpsiDstar_deltaphi'].fill(deltaphi=jpsi_dstar_deltaphi,)
+            output['JpsiDstar']['JpsiDstar_mass'].fill(mass=jpsi_dstar_mass,)
+            output['JpsiDstar']['JpsiDstar_pt'].fill(pt=jpsi_dstar_pt,)
+
+            if mode == 'sum':
+                print('Saving accumulator...')
+                save(output, path_output + '/' + era + '_' + hlt_name + '.coffea')
+
+            elif mode == 'several':
+                print(f'Saving file: ')
+                if config.cate == '':
+                    print(era + '_' + hlt_name + '_' + config.cate + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1])  + '_' + str(counter) + '.coffea')
+                    save(output, path_output + '/' + era + '_' + hlt_name + '_' + config.cate + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1])  + '_' + str(counter) + '.coffea')
+                else:
+                    print(era + '_' + hlt_name + '_' + config.cate + '_' + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1])  + '_'  + str(counter) + '.coffea')
+                    save(output, path_output + '/' + era + '_' + hlt_name + '_' + config.cate + '_' + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1])  + '_'  + str(counter) + '.coffea')
 
         return output
 
@@ -411,8 +496,9 @@ if __name__ == '__main__':
     # If mode = 'several' it will apply the trigger for each file separatedely
     # If mode = 'sum' it will apply the trigger for the summed accumulator.
     mode = config.mode
+    bin = config.bin
 
-    # Takes a list with eras to be runned
+    # Takes a list with eras to be run
     era_list = config.era_list
     # Path to the files
     main_path = config.main_path
@@ -428,8 +514,13 @@ if __name__ == '__main__':
         
         # Path to the output .coffea files
         path_output = main_path + '/' + era + '/merged_data/trigger' + '/' + config.cate 
-        os.system("rm -rf " + path_output)
-        os.system("mkdir -p " + path_output)
+        if config.cate != '':
+            os.system("rm -rf " + path_output)
+            os.system("mkdir -p " + path_output)
+        else:
+            os.system("mkdir -p " + path_output)
+       
+       
         print(f'Creating files on:')
         print(path_output)
 
@@ -442,21 +533,23 @@ if __name__ == '__main__':
             p.process(acc, path_output, era, mode, None)
 
         elif mode == 'several':
-
+            
             path_mode_several = main_path + '/' + era + '/merged_data'
             files = []
 
             # With statement to open scan more efficiently
             with os.scandir(path_mode_several) as it:
                 for file in it:
+                    
                     # Stores all files finished with .coffea
                     if file.name.endswith('.coffea') and (file.stat().st_size != 0):
                         files.append(file.path)
+                     
             
             c = 0
             for f in files:
                 acc = load(f)
-                p.process(acc, path_output, era, mode, c)
+                p.process(acc, path_output, era, mode, c, bin)
                 c = c +1
         
         

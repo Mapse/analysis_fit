@@ -136,7 +136,7 @@ class EventSelectorProcessor(processor.ProcessorABC):
         Muon = ak.mask(Muon, muon_eta_cut)
 
         # Dimuon pT
-        dimu_pt_cut = (Dimu.pt > 20) & (Dimu.pt < 150)
+        dimu_pt_cut = (Dimu.pt > 25) & (Dimu.pt < 150)
         Dimu = ak.mask(Dimu, dimu_pt_cut)
         Muon = ak.mask(Muon, dimu_pt_cut)
 
