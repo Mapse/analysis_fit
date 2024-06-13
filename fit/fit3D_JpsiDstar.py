@@ -26,7 +26,7 @@ def fit3DJpsiDstar(opt):
     jpsi_mass = ROOT.RooRealVar("jpsi_mass", "Mass Jpsi", 2.95, 3.25)
 
     # Decay lenght 
-    jpsi_dl = ROOT.RooRealVar("jpsi_dl", "", -0.5, 1.4)
+    jpsi_dl = ROOT.RooRealVar("jpsi_dl", "", -0.5, 1.5)
 
     jpsi_dlErr = ROOT.RooRealVar("jpsi_dlErr", "", *opt[0]['fit_parameters']['jpsi_dlErr'])
     jpsi_dlErr.setConstant(False)
@@ -89,9 +89,13 @@ def fit3DJpsiDstar(opt):
 
     # Prompt Resolution 
     mean_prompt = ROOT.RooRealVar("mean_prompt", "", *opt[0]['fit_parameters']['mean_prompt'])
-    sigma_prompt = ROOT.RooRealVar("sigma_prompt", "", *opt[0]['fit_parameters']['sigma_prompt'])
-    frac_prompt = ROOT.RooRealVar("frac_prompt", "", *opt[0]['fit_parameters']['frac_prompt'])
-    resolution_prompt = ROOT.RooGaussModel("resolution_prompt", "", jpsi_dl, mean_prompt, sigma_prompt, jpsi_dlErr)
+    sigma_prompt1 = ROOT.RooRealVar("sigma_prompt1", "", *opt[0]['fit_parameters']['sigma_prompt1'])
+    frac_prompt1 = ROOT.RooRealVar("frac_prompt1", "", *opt[0]['fit_parameters']['frac_prompt'])
+    resolution_prompt1 = ROOT.RooGaussModel("resolution_prompt1", "", jpsi_dl, mean_prompt, sigma_prompt1, jpsi_dlErr)
+
+    sigma_prompt2 = ROOT.RooRealVar("sigma_prompt2", "", *opt[0]['fit_parameters']['sigma_prompt2'])
+    frac_prompt2 = ROOT.RooRealVar("frac_prompt2", "", *opt[0]['fit_parameters']['frac_prompt'])
+    resolution_prompt2 = ROOT.RooGaussModel("resolution_prompt2", "", jpsi_dl, mean_prompt, sigma_prompt2, jpsi_dlErr)
 
     # Gaussian 
     mean_pv = ROOT.RooRealVar("mean_pv", "", *opt[0]['fit_parameters']['mean_pv'])
@@ -103,8 +107,8 @@ def fit3DJpsiDstar(opt):
 
     # Jpsi prompt model definition 
     if config.jpsi_pdf['prompt'] == 'resolG':    	
-        jpsi_prompt = ROOT.RooAddPdf("jpsi_prompt", "", ROOT.RooArgList(resolution_prompt, gauss_pv),
-                                                        ROOT.RooArgList(frac_prompt), ROOT.kTRUE)
+        jpsi_prompt = ROOT.RooAddPdf("jpsi_prompt", "", ROOT.RooArgList(resolution_prompt1, resolution_prompt2, gauss_pv),
+                                                        ROOT.RooArgList(frac_prompt1, frac_prompt2), ROOT.kTRUE)
     
     elif config.jpsi_pdf['prompt'] == 'GA':  
         mean_ge = ROOT.RooRealVar("mean_ge", "", *opt[0]['fit_parameters']['mean_ge']) #ge: Gauss extra
@@ -133,10 +137,9 @@ def fit3DJpsiDstar(opt):
     elif config.jpsi_pdf['non_prompt'] == 'GA':    
         
         gauss_gnp = ROOT.RooGaussian("gauss_gnp", "", jpsi_dl, mean_non_prompt, sigma_non_prompt)
-        exp_coef_pv = ROOT.RooRealVar("exp_coef_pv", "", *opt[0]['fit_parameters']['exp_coef_pv'])
-        prompt_exp = ROOT.RooExponential("prompt_exp", "", jpsi_dl, exp_coef_pv)
-        jpsi_non_prompt = ROOT.RooFFTConvPdf("lxg","exp (X) gauss",jpsi_dl, prompt_exp, gauss_gnp) 	    
-        #jpsi_non_prompt = ROOT.RooDecay("exp_decay", "", jpsi_dl, tau, gauss_gnp, ROOT.RooDecay.SingleSided)
+        exp_coef_pv = ROOT.RooRealVar("exp_coef_pv", "", -0.19 , -0.2, 0)
+        non_prompt_exp = ROOT.RooExponential("non_prompt_exp", "", jpsi_dl, exp_coef_pv)
+        jpsi_non_prompt = ROOT.RooFFTConvPdf("lxg","exp (X) gauss",jpsi_dl, non_prompt_exp, gauss_gnp) 	    
         
     ## Dstar Signal: Jhonson's PDF
 

@@ -1,4 +1,4 @@
-set = 'Charmonium2016-pos-VFP_HLT_Dimuon16_sigma_eff_vtx0p05'
+set = 'RunB_HLT_Dimuon25_vtx0p05_sigma_eff'
 
 cases={set : [{'fit_parameters' : {# Jpsi Mass
                                                      #'mean_jpsi' : [3.09423e+00, 3.08, 3.10], 
@@ -16,18 +16,19 @@ cases={set : [{'fit_parameters' : {# Jpsi Mass
                                                      'exp_coef' : [-1.82143e+00 , -4, 3], 
                                                      'frac_exp_mass' : [0.4, 0.0, 1.0],
                                                      # Jpsi Decay Lenght
-                                                     'jpsi_dlErr' : [1, 6.5],
-                                                     'mean_prompt' : [0, -0.1, 0.1], # [0, -0.1, 0.1], [0.000109852] 0.00433729
-                                                     'sigma_prompt' : [0.01, 0, 0.1], # [0.01, 0, 0.1], [0.014579] 0.0093857, 0.0383986 (2017), 0.0103444 (2018)
+                                                     'jpsi_dlErr' : [4 ,0.001, 10],
+                                                     'mean_prompt' : [4.08894e-05, -5.45E-05, 1.36E-04], # [3.67710e-05, 0.00001, 0.00005], [0.000109852] 0.00433729
+                                                     'sigma_prompt1' : [0.0206111, 1.20E-02, 1.60E-02], # [1.47960e-02, 0.005, 0.03], [0.014579] 0.0093857, 0.0383986 (2017), 0.0103444 (2018)
+                                                     'sigma_prompt2' : [0.00612424,  5.02E-03,  6.67E-03], # [6.10019e-03, 0.001, 0.01], [0.014579] 0.0093857, 0.0383986 (2017), 0.0103444 (2018)
                                                      'frac_prompt' : [0.5, 0, 1.0],
-                                                     'mean_pv' : [0, -0.3, 0.3],
-                                                     'sigma_pv' : [0.01, 0, 0.3],
-                                                     'mean_ge' : [0.000109852], #  gaussian: Prompt [0, -0.3, 0.3]
-                                                     'sigma_ge' : [0.014579], #  gaussian: Prompt [0.01, 0, 0.3]
+                                                     'mean_pv' : [-1.02496e-04, -3.65E-04, 1.60E-04], #[1.18699e-04, -0.3, 0.3]
+                                                     'sigma_pv' : [1.37666e-02, 1.33E-02, 1.43E-02], #[1.41996e-02, 0.005, 0.03]
+                                                     'mean_ge' : [0, -0.3, 0.3], #  gaussian: Prompt [0, -0.3, 0.3]
+                                                     'sigma_ge' : [0.01, 0, 0.3], #  gaussian: Prompt [0.01, 0, 0.3]
                                                      'exp_coef_pv' : [-0.19 , -0.2, 0], 
                                                      'frac_np1' : [0.1, 0.0, 0.5],
-                                                     'mean_non_prompt' : [0, -0.1, 0.1],
-                                                     'sigma_non_prompt' : [0.01, 0, 0.1],  
+                                                     'mean_non_prompt' : [-0.00452536, -0.005, 0.005], 
+                                                     'sigma_non_prompt' : [0.0188632, 0.007, 0.02],  #0.000100075
                                                      'mean_non_prompt2' : [0.1, -0.1, 0.1],
                                                      'sigma_non_prompt2' : [0.05, 0, 0.1],  
                                                      'tau' : [0.19, 0.01, 3],
@@ -83,14 +84,15 @@ jpsi_pdf = {'prompt' : 'resolG',  # prompt: resolG (default), GA (gaussian)
 
 # Luminosity
 #lumi = "13.09 fb^{-1}" #2016-pre-VFP
-lumi = "13.26 fb^{-1}" #2016-pos-VFP
+#lumi = "13.26 fb^{-1}" #2016-pos-VFP
 #lumi = "41.48 fb^{-1}" #2017
+lumi = "4.8 fb^{-1}" #2017 - RunB
 #lumi = "57.69 fb^{-1}" #2018
 
 # Chi square
-nparm_jpsi_mass = 8
+nparm_jpsi_mass = 4
 nparm_jpsi_dl = 8
-nparm_dstar = 6
+nparm_dstar = 8
 
 # Dict with gourmetization for plotting
 colors = {"model" : 2, "signal" : 4, "background" : 3}
