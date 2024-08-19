@@ -23,12 +23,14 @@ To run you simply do: python3 TriggerProcessor.py
 mode = 'several'
 
 # Special name for save it (e.g: cate = 'prompt_jpsi')
-cate = 'vtx0p05'
+#cate = 'inv_mass_high_cut_8'
+#cate = 'vtx0p05_sigma_eff_signal_region'
+cate = 'vtx0p05_sigma_eff'
 #path_mode_several = '/home/mabarros/Analysis_2017/OniaOpenCharmRun2ULAna/output/Charmonium_2017/RunB_HIPM_ver2/merged_data'
 
 # List with eras to run
 #era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF', '9to30', '30to50', '50to100', 'sps',  ]
-#era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
+era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
 #era_list=['RunB', ] # 2017
 #era_list=['RunB_HIPM', 'RunC_HIPM', 'RunD_HIPM', 'RunE_HIPM', 'RunF_HIPM',] # 2016-pre-VFP
 #era_list=['RunF','RunG', 'RunH'] # 2016-pos-VFP
@@ -39,12 +41,18 @@ cate = 'vtx0p05'
 #era_list=['9to30', '30to50', '50to100', 'sps']
 #era_list=['30to50', '50to100', '100to150']
 
-era_list=['9to30']
+#era_list=['9to30']
 
 """ bin = {'jpsi_pt_bin1' : [25, 30],
        'jpsi_pt_bin2' : [30, 50],} """
 
-bin = {'jpsi_pt_bin1' : [25, 100],}
+bin = {'jpsi_pt_bin1' : [25, 30],
+       'jpsi_pt_bin2' : [30, 50],
+       'jpsi_pt_bin3' : [50, 70],
+       'jpsi_pt_bin4' : [70, 100], }
+
+# Boolean to cut on small phase-space 
+effec_sigma = True
 
 # Path where the files produced by condor are stored.
 # this path should point to the directory where RunX/merged_data is!!!

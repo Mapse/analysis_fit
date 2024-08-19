@@ -24,16 +24,17 @@ To run you simply do: python3 merge_data.py
 #era_list=['RunF',] # 2016-pos-VFP
 #era_list=['RunG', 'RunH']
 #era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
+#era_list=['dps_30to50',]
 era_list=['dps_9to30',]
 
 #era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
-#era_list=['dps_9to30']
+#era_list=['sps_vfns_9to30', 'sps_vfns_30to50']
 
 #era_list=['RunA','RunB', 'RunC', 'RunD'] # 2018
 #era_list=['RunD',] # 2018
 # Number of chunks to divide the file list
-n_size = 8
+n_size = 10
 
 # Path where the files produced by condor are stored.
-path = '/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_data/analysis_fit/data/2018/' 
+path = '/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_data/analysis_fit/data/2017/' 
 

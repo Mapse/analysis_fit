@@ -123,6 +123,9 @@ class TriggerProcessor(processor.ProcessorABC):
                 'Dstar_D0dlSig': hist.Hist("Events", 
                                         hist.Cat("chg", "charge"), 
                                         hist.Bin("d0dlsig", "D$^0$ from D$^*$ - Decay length significance", 120, 0, 50)),
+                'Dstar_D0dca': hist.Hist("Events", 
+                                        hist.Cat("chg", "charge"), 
+                                        hist.Bin("d0dca", "D$^0$ from D$^*$ - DCA  (cm)", 80, 0, 0.1)),
                 'Dstar_Kpt': hist.Hist("Events", 
                                         hist.Cat("chg", "charge"), 
                                         hist.Bin("kpt", "K from D$^*$ - p$_{T}$ [GeV/c]", 80, 0, 100)),
@@ -151,8 +154,6 @@ class TriggerProcessor(processor.ProcessorABC):
             }),
         })
         
- 
-
     @property
     def accumulator(self):
         return self._accumulator
@@ -249,7 +250,7 @@ class TriggerProcessor(processor.ProcessorABC):
 
             #print(dir(DimuDstar_p4))
 
-            ## DimuDstar collection
+            ## DimuDstar collection Dstar.D0dl * (1-Dstar.D0cosphi)**0.5
 
             # Creates the pt, eta, phi, m lorentz vector.
             DimuDstar = ak.zip({
@@ -271,6 +272,7 @@ class TriggerProcessor(processor.ProcessorABC):
                 'dstar_d0cosphi' : DimuDstar_acc['Dstar']['D0cosphi'].value,
                 'dstar_d0dl' : DimuDstar_acc['Dstar']['D0dl'].value,
                 'dstar_d0dlsig' : DimuDstar_acc['Dstar']['D0dlSig'].value,
+                'dstar_d0dca' : DimuDstar_acc['Dstar']['D0dl'].value * (1-(DimuDstar_acc['Dstar']['D0cosphi'].value)**2)**0.5,
                 'dstar_Kpt' : DimuDstar_acc['Dstar']['Kpt'].value,
                 'dstar_Kchindof' : DimuDstar_acc['Dstar']['Kchindof'].value,
                 'dstar_KnValid' : DimuDstar_acc['Dstar']['KnValid'].value,
@@ -281,7 +283,7 @@ class TriggerProcessor(processor.ProcessorABC):
                 'dstar_pischindof' : DimuDstar_acc['Dstar']['pischindof'].value,
                 'dstar_pisnValid' : DimuDstar_acc['Dstar']['pisnValid'].value,
                 'associationProb' : DimuDstar_acc['Dstar']['associationProb'].value,            
-                'dimu_dstar_deltarap' : DimuDstar_acc['deltarap'].value,
+                'dimu_dstar_deltarap' : abs(DimuDstar_acc['deltarap'].value),
                 'dimu_dstar_deltapt' : DimuDstar_acc['deltapt'].value,
                 'dimu_dstar_deltaeta' : DimuDstar_acc['deltaeta'].value,
                 'dimu_dstar_deltaphi' : DimuDstar_acc['deltaphi'].value,                
@@ -324,19 +326,28 @@ class TriggerProcessor(processor.ProcessorABC):
             print(f'pT min: {bin[b][0]}')
             print(f'pT max: {bin[b][1]}')
 
-            #DimuDstar = DimuDstar[(DimuDstar.dimu_dstar_mass > 4) & (DimuDstar.dimu_dstar_mass < 8)]
-            #DimuDstar = DimuDstar[(DimuDstar.dstar_pt > 4) & (DimuDstar.dstar_pt < 60)]
-            #DimuDstar = DimuDstar[DimuDstar.jpsi_dl < 0.06]
+            # Selects phase space for effective sigma calculation
+            if config.effec_sigma:
 
-            #DimuDstar = DimuDstar[np.absolute(DimuDstar.jpsi_rap) < 1.2]
-            #DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
-            #print(DimuDstar.jpsi_eta)
+                # Jpsi cuts
+                DimuDstar = DimuDstar[(DimuDstar.jpsi_pt > 25) & (DimuDstar.jpsi_pt < 100)]
+                DimuDstar = DimuDstar[np.absolute(DimuDstar.jpsi_rap) < 1.2]
 
+                # Dstar cuts
+                DimuDstar = DimuDstar[(DimuDstar.dstar_pt > 4) & (DimuDstar.dstar_pt < 60)]
+                DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
+
+            ## Cuts for signal region
+
+            #DimuDstar = DimuDstar[(DimuDstar.dstar_deltamr > 0.143) & (DimuDstar.dstar_deltamr < 0.147)]
+            #DimuDstar = DimuDstar[(DimuDstar.jpsi_mass > 3.00) & (DimuDstar.jpsi_mass < 3.17)]
+            #DimuDstar = DimuDstar[DimuDstar.jpsi_dl < 0.1]
+            #DimuDstar = DimuDstar[DimuDstar.dstar_d0dca < 0.01]
+            #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 8]
+    
             # vtx prob cut 
             DimuDstar = DimuDstar[DimuDstar.associationProb > 0.05]
-            #DimuDstar = DimuDstar[(DimuDstar.dstar_Kdxy < 0.5) & (DimuDstar.dstar_pidxy < 0.5)]
-            #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 20]
-
+        
             ## To fill histograms
 
             # Jpsi variables
@@ -347,6 +358,7 @@ class TriggerProcessor(processor.ProcessorABC):
             jpsi_rap = ak.flatten(DimuDstar.jpsi_rap)
             jpsi_dlsig = ak.flatten(DimuDstar.jpsi_dlsig)
             jpsi_dl = ak.flatten(DimuDstar.jpsi_dl)
+
             # Dstar variables
             dstar_deltamr = ak.flatten(DimuDstar.dstar_deltamr)
             dstar_pt = ak.flatten(DimuDstar.dstar_pt)
@@ -357,6 +369,7 @@ class TriggerProcessor(processor.ProcessorABC):
             dstar_d0cosphi = ak.flatten(DimuDstar.dstar_d0cosphi)
             dstar_d0dl = ak.flatten(DimuDstar.dstar_d0dl)
             dstar_d0dlsig = ak.flatten(DimuDstar.dstar_d0dlsig)
+            dstar_d0dca = ak.flatten(DimuDstar.dstar_d0dca)
             dstar_Kpt = ak.flatten(DimuDstar.dstar_Kpt)
             dstar_Kchindof = ak.flatten(DimuDstar.dstar_Kchindof)
             dstar_KnValid = ak.flatten(DimuDstar.dstar_KnValid)
@@ -367,7 +380,9 @@ class TriggerProcessor(processor.ProcessorABC):
             dstar_pisnValid = ak.flatten(DimuDstar.dstar_pisnValid)
 
             # JpsiDstar variables
-            jpsi_dstar_deltarap = ak.flatten(DimuDstar.dimu_dstar_deltarap)
+            jpsi_dstar_deltarap = ak.flatten(DimuDstar.dimu_dstar_deltarap) # Takes module
+            #jpsi_dstar_deltarap_abs = abs(jpsi_dstar_deltarap)
+
             jpsi_dstar_deltaphi= ak.flatten(DimuDstar.dimu_dstar_deltaphi)
             jpsi_dstar_mass = ak.flatten(DimuDstar.dimu_dstar_mass) 
             jpsi_dstar_pt = ak.flatten(DimuDstar.dimu_dstar_pt) 
@@ -451,6 +466,7 @@ class TriggerProcessor(processor.ProcessorABC):
             output['JpsiDstar']['Dstar_D0cosphi'].fill(chg='right charge', d0cosphi=dstar_d0cosphi,)
             output['JpsiDstar']['Dstar_D0dl'].fill(chg='right charge', d0dl=dstar_d0dl,)
             output['JpsiDstar']['Dstar_D0dlSig'].fill(chg='right charge', d0dlsig=dstar_d0dlsig,)
+            output['JpsiDstar']['Dstar_D0dca'].fill(chg='right charge', d0dca=dstar_d0dca,)
             output['JpsiDstar']['Dstar_Kpt'].fill(chg='right charge', kpt=dstar_Kpt,)
             output['JpsiDstar']['Dstar_Kchindof'].fill(chg='right charge', kchindof=dstar_Kchindof,)
             output['JpsiDstar']['Dstar_KnValid'].fill(chg='right charge', knvalid=dstar_KnValid,)
