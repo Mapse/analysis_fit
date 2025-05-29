@@ -25,7 +25,8 @@ To run you simply do: python3 merge_data.py
 #era_list=['RunG', 'RunH']
 #era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
 #era_list=['dps_30to50',]
-era_list=['dps_9to30',]
+#era_list=['dps_9to30',]
+era_list=['dps_ccbar_50to100']
 
 #era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
 #era_list=['sps_vfns_9to30', 'sps_vfns_30to50']

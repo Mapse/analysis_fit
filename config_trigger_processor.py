@@ -23,11 +23,12 @@ To run you simply do: python3 TriggerProcessor.py
 mode = 'several'
 
 # Special name for save it (e.g: cate = 'prompt_jpsi')
-#cate = 'inv_mass_high_cut_8'
+#cate = 'enhance_peak'
+#cate = 'vtx0p05_sigma_eff'
+#cate = 'inv_mass_high_cut_18GeV'
 #cate = 'vtx0p05_sigma_eff_signal_region'
-cate = 'vtx0p05_sigma_eff'
-#path_mode_several = '/home/mabarros/Analysis_2017/OniaOpenCharmRun2ULAna/output/Charmonium_2017/RunB_HIPM_ver2/merged_data'
-
+#cate = 'inv_mass_high_cut_18GeV_signal_region'
+cate = 'inv_mass_high_cut_18GeV'
 # List with eras to run
 #era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF', '9to30', '30to50', '50to100', 'sps',  ]
 era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
@@ -43,13 +44,11 @@ era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] # 2017: data
 
 #era_list=['9to30']
 
-""" bin = {'jpsi_pt_bin1' : [25, 30],
-       'jpsi_pt_bin2' : [30, 50],} """
+bin = {'jpsi_pt_bin1' : [25, 100], }
 
-bin = {'jpsi_pt_bin1' : [25, 30],
-       'jpsi_pt_bin2' : [30, 50],
-       'jpsi_pt_bin3' : [50, 70],
-       'jpsi_pt_bin4' : [70, 100], }
+""" bin = {'jpsi_pt_bin1' : [30, 40],
+       'jpsi_pt_bin2' : [40, 50],
+       'jpsi_pt_bin3' : [50, 100],} """
 
 # Boolean to cut on small phase-space 
 effec_sigma = True

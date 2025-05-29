@@ -7,12 +7,51 @@ from coffea.util import load, save
 from coffea.nanoevents.methods import candidate
 ak.behavior.update(candidate.behavior)
 
+import uproot
+
 #import numpy as np
 import config_trigger_processor as config
 
 import os
 
 import numpy as np
+
+def get_evt_eff(hists_eff, data):
+    from coffea.lookup_tools.dense_lookup import dense_lookup
+    
+    corr = {h:dense_lookup(hists_eff[h].values(), [ax.edges for ax in hists_eff[h].axes]) for h in hists_eff}
+
+    effs = {}
+    effs['acc_dimu']                  = ak.flatten(corr['acc_dimu'](data.jpsi_pt, data.jpsi_rap))
+    effs['acc_dstar']                 = ak.flatten(corr['acc_dstar'](data.dstar_pt, data.dstar_rap))
+    effs['eff_cuts_dimu']             = ak.flatten(corr['eff_cuts_dimu'](data.jpsi_pt, data.jpsi_rap))
+    effs['eff_cuts_dstar']            = ak.flatten(corr['eff_cuts_dstar'](data.dstar_pt, data.dstar_rap))
+    effs['eff_trigger_dimu']          = ak.flatten(corr['eff_trigger'](data.jpsi_pt, data.jpsi_rap))
+    effs['eff_asso_pt']               = ak.flatten(corr['eff_asso_pt'](data.jpsi_pt, data.dstar_pt))
+    
+    effs_err_up = {}
+    effs_err_up['acc_dimu']           = ak.flatten(corr['acc_dimu_err_up'](data.jpsi_pt, data.jpsi_rap))
+    effs_err_up['acc_dstar']          = ak.flatten(corr['acc_dstar_err_up'](data.dstar_pt, data.dstar_rap))
+    effs_err_up['eff_cuts_dimu']      = ak.flatten(corr['eff_cuts_dimu_err_up'](data.jpsi_pt, data.jpsi_rap))
+    effs_err_up['eff_cuts_dstar']     = ak.flatten(corr['eff_cuts_dstar_err_up'](data.dstar_pt, data.dstar_rap))
+    effs_err_up['eff_trigger_dimu']   = ak.flatten(corr['eff_trigger_err_up'](data.jpsi_pt, data.jpsi_rap))
+    effs_err_up['eff_asso_pt']        = ak.flatten(corr['eff_asso_pt_err_up'](data.jpsi_pt, data.dstar_pt))
+
+    effs_err_down = {}
+    effs_err_down['acc_dimu']         = ak.flatten(corr['acc_dimu_err_down'](data.jpsi_pt, data.jpsi_rap))
+    effs_err_down['acc_dstar']        = ak.flatten(corr['acc_dstar_err_down'](data.dstar_pt, data.dstar_rap))
+    effs_err_down['eff_cuts_dimu']    = ak.flatten(corr['eff_cuts_dimu_err_down'](data.jpsi_pt, data.jpsi_rap))
+    effs_err_down['eff_cuts_dstar']   = ak.flatten(corr['eff_cuts_dstar_err_down'](data.dstar_pt, data.dstar_rap))
+    effs_err_down['eff_trigger_dimu'] = ak.flatten(corr['eff_trigger_err_down'](data.jpsi_pt, data.jpsi_rap))
+    effs_err_down['eff_asso_pt']      = ak.flatten(corr['eff_asso_pt_err_down'](data.jpsi_pt, data.dstar_pt))
+
+    total_eff = np.prod([effs[h] for h in effs], axis=0)
+    total_eff_err_up = total_eff*np.sqrt(np.sum([(effs_err_up[h]/effs[h])**2 for h in effs], axis=0))
+    total_eff_err_down = total_eff*np.sqrt(np.sum([(effs_err_down[h]/effs[h])**2 for h in effs], axis=0))
+    
+    wgt = 1/total_eff
+
+    return total_eff, total_eff_err_up, total_eff_err_down, effs['eff_asso_pt'], effs_err_up['eff_asso_pt'], effs_err_down['eff_asso_pt'], wgt
 
 def build_p4(acc):
 
@@ -96,6 +135,7 @@ class TriggerProcessor(processor.ProcessorABC):
                 'JpsiDstar_deltarap': hist.Hist("Events", hist.Bin("deltarap", "$\Delta y$", 50, -5, 5)),
                 'JpsiDstar_deltaphi': hist.Hist("Events", hist.Bin("deltaphi", r"$|\phi_{J/\psi} - \phi_{D^*}|$ [rad]", 80, 0, 5)),
                 'JpsiDstar_mass': hist.Hist("Events", hist.Bin("mass", "$m_{J/\psi D*}$ [$GeV/c^2$]", 50, 0, 120)),
+                'JpsiDstar_deltamass': hist.Hist("Events", hist.Bin("dmass", "$m_{J/\psi D*}$ [$GeV/c^2$]", 50, 0, 120)),
                 'JpsiDstar_pt': hist.Hist("Events", hist.Bin("pt", "$p_{T, J/\psi D*}$ [$GeV/c$]", 50, 0, 150)),
                 'Dstar_p': hist.Hist("Events",
                                  hist.Cat("chg", "charge"), 
@@ -288,6 +328,7 @@ class TriggerProcessor(processor.ProcessorABC):
                 'dimu_dstar_deltaeta' : DimuDstar_acc['deltaeta'].value,
                 'dimu_dstar_deltaphi' : DimuDstar_acc['deltaphi'].value,                
                 'dimu_dstar_mass' : DimuDstar_p4.mass, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
+                'dimu_dstar_deltamass' : DimuDstar_p4.mass - DimuDstar_acc['Dimu']['mass'].value - (DimuDstar_acc['Dstar']['deltamr'].value + DimuDstar_acc['Dstar']['D0mass'].value),
                 'dimu_dstar_pt' : DimuDstar_p4.pt, #is_jpsi & ~wrg_chg & dlSig & dlSig_D0Dstar
                 'is_jpsi' : DimuDstar_acc['Dimu']['is_jpsi'].value,
                 'wrg_chg': DimuDstar_acc['Dstar']['wrg_chg'].value,}, with_name='PtEtaPhiMCandidate')  
@@ -337,17 +378,47 @@ class TriggerProcessor(processor.ProcessorABC):
                 DimuDstar = DimuDstar[(DimuDstar.dstar_pt > 4) & (DimuDstar.dstar_pt < 60)]
                 DimuDstar = DimuDstar[np.absolute(DimuDstar.dstar_rap) < 2.1]
 
-            ## Cuts for signal region
+            ##### Cuts for signal region
 
             #DimuDstar = DimuDstar[(DimuDstar.dstar_deltamr > 0.143) & (DimuDstar.dstar_deltamr < 0.147)]
             #DimuDstar = DimuDstar[(DimuDstar.jpsi_mass > 3.00) & (DimuDstar.jpsi_mass < 3.17)]
             #DimuDstar = DimuDstar[DimuDstar.jpsi_dl < 0.1]
             #DimuDstar = DimuDstar[DimuDstar.dstar_d0dca < 0.01]
-            #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 8]
+
+            ##### Cut for removing peak
+            DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 18]
     
-            # vtx prob cut 
+            ##### vtx prob cut 
             DimuDstar = DimuDstar[DimuDstar.associationProb > 0.05]
-        
+            
+            ##### Cuts for enhancing peak 
+
+            # Tight vertex 
+            #DimuDstar = DimuDstar[DimuDstar.associationProb > 0.1]
+            # Non-prompt J/psi
+            #DimuDstar = DimuDstar[DimuDstar.jpsi_dl > 0.15]
+            # Non-prompt D*
+            #DimuDstar = DimuDstar[DimuDstar.dstar_d0dca > 0.02]
+            #DimuDstar = DimuDstar[DimuDstar.dstar_d0dlsig > 12]
+
+            ##### To take efficiencies from efficiency files
+            file_eff = uproot.open(f'/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_monte_carlo/efficiencies_per_evt/output/efficiency/efficiencies_DPS-ccbar_pt_bin_jpsi_2017.root')
+            hists_eff = {h[:h.find(';')]:file_eff[h].to_hist() for h in file_eff}
+            eff, eff_err_up, eff_err_down, eff_asso, eff_asso_err_up, eff_asso_err_down, wgt = get_evt_eff(hists_eff, DimuDstar)
+            eff = ak.unflatten(eff, ak.num(DimuDstar))
+            eff_err_down = ak.unflatten(eff_err_down, ak.num(DimuDstar))
+            eff_asso = ak.unflatten(eff_asso, ak.num(DimuDstar))
+            eff_asso_err_up = ak.unflatten(eff_asso_err_up, ak.num(DimuDstar))
+            eff_asso_err_down = ak.unflatten(eff_asso_err_down, ak.num(DimuDstar))
+            wgt = ak.unflatten(wgt, ak.num(DimuDstar))
+            DimuDstar['eff'] = eff
+            DimuDstar['eff_err_up'] = eff_err_up
+            DimuDstar['eff_err_down'] = eff_err_down
+            DimuDstar['eff_asso'] = eff_asso
+            DimuDstar['eff_asso_err_up'] = eff_asso_err_up
+            DimuDstar['eff_asso_err_down'] = eff_asso_err_down
+            DimuDstar['wgt'] = wgt
+
             ## To fill histograms
 
             # Jpsi variables
@@ -385,6 +456,7 @@ class TriggerProcessor(processor.ProcessorABC):
 
             jpsi_dstar_deltaphi= ak.flatten(DimuDstar.dimu_dstar_deltaphi)
             jpsi_dstar_mass = ak.flatten(DimuDstar.dimu_dstar_mass) 
+            jpsi_dstar_deltamss = ak.flatten(DimuDstar.dimu_dstar_deltamass)
             jpsi_dstar_pt = ak.flatten(DimuDstar.dimu_dstar_pt) 
   
             """muon_lead_acc = processor.dict_accumulator({})
@@ -480,6 +552,7 @@ class TriggerProcessor(processor.ProcessorABC):
             output['JpsiDstar']['JpsiDstar_deltarap'].fill(deltarap=jpsi_dstar_deltarap,)
             output['JpsiDstar']['JpsiDstar_deltaphi'].fill(deltaphi=jpsi_dstar_deltaphi,)
             output['JpsiDstar']['JpsiDstar_mass'].fill(mass=jpsi_dstar_mass,)
+            output['JpsiDstar']['JpsiDstar_deltamass'].fill(dmass=jpsi_dstar_deltamss)
             output['JpsiDstar']['JpsiDstar_pt'].fill(pt=jpsi_dstar_pt,)
 
             if mode == 'sum':

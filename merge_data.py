@@ -2,6 +2,8 @@
 from coffea.util import save, load
 from tqdm import tqdm
 import os
+import shutil
+import glob
 
 import config_merge_data as config
 
@@ -112,6 +114,20 @@ if __name__ == '__main__':
         # to merge the merged files all it has to do is calling merge function again over this list)
         merged_files = []
         ct = 0
-        for array in splited_paths:
-            merged_files.append(merge(era, array, ct))
-            ct = ct + 1
+
+        # Check if the number of files is greater than 5.
+        if n_fl > 5:
+            for array in splited_paths:
+                merged_files.append(merge(era, array, ct))
+                ct = ct + 1
+        else:    
+            print("Skipping merge: the number of files is less than 5. Moving files instead.")
+            
+            destination_path = paths + '/merged_data/'
+            # Get all .coffea files in the source path
+            coffea_files = glob.glob(os.path.join(paths, "*.coffea"))
+            # Move each file to the destination path
+            for file in coffea_files:
+                shutil.move(file, destination_path)
+                print(f"Moved: {file} -> {destination_path}")
+        

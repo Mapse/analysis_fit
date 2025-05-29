@@ -48,7 +48,6 @@ def load_accumulator(main_path, era, condition, bin):
             acc += load(i)
         trigger_name = ''
 
-
         return acc, trigger_name
 
     if condition == 'trigger':
@@ -80,10 +79,7 @@ def load_accumulator(main_path, era, condition, bin):
         # in order to monitor the loop progress.
         for i in tqdm(files[1:], desc="Loading " + era, unit=" files", total=len(files)-1):
             acc += load(i)
-        #print(trigger_name)
         print(f'bin {bin}')
-        print(files)
-    
         return acc, trigger_name
 
     
@@ -103,8 +99,12 @@ def create_root(accumulator, path_output, era, b, condition=None):
 
     '''
 
-    # Taks the accumulator and the trigger name
-    acc, trigger_name = accumulator
+    # Takes the accumulator and the trigger name
+    if splot:
+        acc = accumulator
+        trigger_name = ''
+    else:
+        acc, trigger_name = accumulator
     nevts_data = config.nevts_data
     
     print(f'Processing bin {b}')
@@ -151,14 +151,10 @@ def create_root(accumulator, path_output, era, b, condition=None):
 
             # Pileup, muon ID, and muon reco weights
             weight = acc['weight'].value
-            #xsec_weight = nevts_data/len(all_asso_jpsi_mass)
-            #weight = np.full_like(all_asso_jpsi_mass, xsec_weight) 
-            #print(f"d:{len(dstar_mass)}")
-            #print(f"w:{len(weight)}")
-
-            #print(f'weight: {xsec_weight}')
-
-        
+            print(f'weight: {weight}')
+            
+        elif 'splot' in era:
+            print('working with splot file')
         # Conditions for data
         else:
             
@@ -188,114 +184,150 @@ def create_root(accumulator, path_output, era, b, condition=None):
             jpsi_dstar_deltarap = acc['DimuDstar']['dimu_dstar_deltarap'].value[~wrg_chg]
             jpsi_dstar_deltaphi = acc['DimuDstar']['dimu_dstar_deltaphi'].value[~wrg_chg]
             jpsi_dstar_deltapt = acc['DimuDstar']['dimu_dstar_deltapt'].value[~wrg_chg]
-
-        
-        ## Applying weighs
-
-        """ dstar_mass = np.repeat(dstar_mass, xsec_weight)
-        dstar_d0dl = np.repeat(dstar_d0dl, xsec_weight)
-        dstar_d0dlsig = np.repeat(dstar_d0dlsig, xsec_weight)
-        all_asso_jpsi_mass12 = np.repeat(all_asso_jpsi_mass, xsec_weight)
-        all_asso_jpsi_pt = np.repeat(all_asso_jpsi_pt, xsec_weight)
-        all_asso_jpsi_dl = np.repeat(all_asso_jpsi_dl, xsec_weight)
-        all_asso_jpsi_dl_err = np.repeat(all_asso_jpsi_dl_err, xsec_weight)
-        jpsi_dstar_mass = np.repeat(jpsi_dstar_mass, xsec_weight)
-        jpsi_dstar_deltarap = np.repeat(jpsi_dstar_deltarap, xsec_weight) """
-
+            jpsi_dstar_deltamass = acc['DimuDstar']['dimu_dstar_deltamass'].value[~wrg_chg]
 
     # If the variable condition is not give it will raise an exception
     else:
         raise Exception(f' The variable condition is {condition}, which is not valid! You should provide a valide one, either no_trigger or trigger!')
     
     # Creates the root file for reach input.
-    if config.cate == '':
-        if 'dps' in era or 'sps' in era:
-            root_name = path_output + trigger_name  + config.cate  + '.root'
-        else:
-            root_name = path_output + era + '_' + trigger_name  + config.cate + '_' + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1]) + '.root'
+    if splot:
+        root_name = path_output + config.splot_coffea[:config.splot_coffea.find('coffea')-1] + '_' + config.cate + '.root'
+
     else:
-        if 'dps' in era or 'sps' in era:
-            root_name = path_output + trigger_name  + '_' + config.cate  + '.root'
+        if config.cate == '':
+            if 'dps' in era or 'sps' in era:
+                root_name = path_output + trigger_name  + config.cate  + '.root'
+            else:
+                root_name = path_output + era + '_' + trigger_name  + config.cate + '_' + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1]) + '.root'
         else:
-            root_name = path_output + era + '_' + trigger_name  + '_' + config.cate + '_' + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1])  + '.root'
+            if 'dps' in era or 'sps' in era:
+                root_name = path_output + trigger_name  + '_' + config.cate  + '.root'
+            else:
+                root_name = path_output + era + '_' + trigger_name  + '_' + config.cate + '_' + b + '_' + str(bin[b][0]) + '_' + str(bin[b][1])  + '.root'
 
-    with uproot3.recreate(root_name) as ds:
-        
-        
-        if 'dps' in era or 'sps' in era:
+    if splot:
 
-            ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
-                                    "dstar_pt": "float32",
-                                    "dstar_rap": "float32",
-                                    "dstar_d0dl" : "float32",
-                                    "dstar_d0dlsig" : "float32",
-                                    "dstar_d0dca" : "float32",
-                                    "jpsi_mass": "float32", 
-                                    "jpsi_pt": "float32",
-                                    "jpsi_rap": "float32",
-                                    "jpsi_dl": "float32",
-                                    "jpsi_dlErr": "float32",  
-                                    "jpsi_dstar_mass" : "float32,",                                 
-                                    "jpsi_dstar_deltarap": "float32", 
-                                    "jpsi_dstar_deltaphi" : "float32", 
-                                    "jpsi_dstar_deltapt" : "float32",
-                                    "weight": "float32",})
-            ds['asso'].extend({"dstar_mass": dstar_mass, 
-                            "dstar_pt": dstar_pt, 
-                            "dstar_rap": dstar_rap,   
-                            "dstar_d0dl": dstar_d0dl,  
-                            "dstar_d0dlsig": dstar_d0dlsig, 
-                            "dstar_d0dca" : dstar_d0dca,
-                            "jpsi_mass": all_asso_jpsi_mass, 
-                            "jpsi_pt": all_asso_jpsi_pt, 
-                            "jpsi_rap": all_asso_jpsi_rap,
-                            "jpsi_dl": all_asso_jpsi_dl,
-                            "jpsi_dlErr": all_asso_jpsi_dl_err,
-                            "jpsi_dstar_mass": jpsi_dstar_mass,                        
-                            "jpsi_dstar_deltarap": jpsi_dstar_deltarap,
-                            "jpsi_dstar_deltaphi": jpsi_dstar_deltaphi,
-                            "jpsi_dstar_deltapt": jpsi_dstar_deltapt,
-                            "weight": weight,})
+        # import uproot to write hist packages into root files.
+        import uproot
+
+        ## Takes the variables
+
+        # Dstar delta mass
+        dstar_mass = acc['JpsiDstar']['Dstar_deltamr'].sum('chg')
+        dstar_mass_hist = dstar_mass.to_hist()
+
+        # Dstar d0 dca
+        dstar_d0dca = acc['JpsiDstar']['Dstar_D0dca'].sum('chg')
+        dstar_d0dca_hist = dstar_d0dca.to_hist()
+
+        # Jpsi pt 
+        jpsi_pt = acc['JpsiDstar']['Jpsi_pt']
+        jpsi_pt_hist = jpsi_pt.to_hist()
+
+        # Jpsi dl 
+        jpsi_dl = acc['JpsiDstar']['Jpsi_dl']
+        jpsi_dl_hist = jpsi_dl.to_hist()
+
+        # JpsiDstar inv mass
+        jpsi_dstar_mass = acc['JpsiDstar']['JpsiDstar_mass']
+        jpsi_dstar_mass_hist = jpsi_dstar_mass.to_hist()
+
+        # JpsiDstar delta rapidity
+        jpsi_dstar_deltarap = acc['JpsiDstar']['JpsiDstar_deltarap']
+        jpsi_dstar_deltarap_hist = jpsi_dstar_deltarap.to_hist()
+
         
-        else:
-            ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
-                                    "dstar_pt": "float32",
-                                    "dstar_rap": "float32",
-                                    "dstar_phi": "float32",
-                                    "dstar_d0dl" : "float32",
-                                    "dstar_d0dlsig" : "float32",
-                                    "dstar_d0dca" : "float32",
-                                    "jpsi_mass": "float32", 
-                                    "jpsi_pt": "float32",
-                                    "jpsi_rap": "float32",
-                                    "jpsi_phi": "float32",
-                                    "jpsi_dl": "float32",
-                                    "jpsi_dlErr": "float32",
-                                    "jpsi_dstar_mass": "float32",
-                                    "jpsi_dstar_pt" : "float32",
-                                    "jpsi_dstar_deltarap": "float32",
-                                    "jpsi_dstar_deltaphi": "float32",
-                                    "jpsi_dstar_deltapt": "float32", 
-                                    })
-            ds['asso'].extend({"dstar_mass": dstar_mass, 
-                            "dstar_pt": dstar_pt, 
-                            "dstar_rap": dstar_rap, 
-                            "dstar_phi": dstar_phi,   
-                            "dstar_d0dl": dstar_d0dl,  
-                            "dstar_d0dlsig": dstar_d0dlsig, 
-                            "dstar_d0dca" : dstar_d0dca,
-                            "jpsi_mass": all_asso_jpsi_mass, 
-                            "jpsi_pt": all_asso_jpsi_pt, 
-                            "jpsi_rap": all_asso_jpsi_rap,
-                            "jpsi_phi": all_asso_jpsi_phi,
-                            "jpsi_dl": all_asso_jpsi_dl,
-                            "jpsi_dlErr": all_asso_jpsi_dl_err,
-                            "jpsi_dstar_mass": jpsi_dstar_mass, 
-                            "jpsi_dstar_pt": jpsi_dstar_pt, 
-                            "jpsi_dstar_deltarap": jpsi_dstar_deltarap,
-                            "jpsi_dstar_deltaphi": jpsi_dstar_deltaphi,
-                            "jpsi_dstar_deltapt": jpsi_dstar_deltapt,
-                            })
+        with uproot.recreate(root_name) as ds:
+           ds['dstar_mass'] = dstar_mass_hist
+           ds['dstar_d0dca'] = dstar_d0dca_hist
+           ds['jpsi_pt'] = jpsi_pt_hist
+           ds['jpsi_dl'] = jpsi_dl_hist
+           ds['jpsi_dstar_mass'] = jpsi_dstar_mass_hist
+           ds['jpsi_dstar_deltarap'] = jpsi_dstar_deltarap_hist
+
+    else:
+        with uproot3.recreate(root_name) as ds:
+            
+            
+            if 'dps' in era or 'sps' in era:
+
+                ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
+                                        "dstar_pt": "float32",
+                                        "dstar_rap": "float32",
+                                        "dstar_d0dl" : "float32",
+                                        "dstar_d0dlsig" : "float32",
+                                        "dstar_d0dca" : "float32",
+                                        "jpsi_mass": "float32", 
+                                        "jpsi_pt": "float32",
+                                        "jpsi_rap": "float32",
+                                        "jpsi_dl": "float32",
+                                        "jpsi_dlErr": "float32",  
+                                        "jpsi_dstar_mass" : "float32,",                                 
+                                        "jpsi_dstar_deltarap": "float32", 
+                                        "jpsi_dstar_deltaphi" : "float32", 
+                                        "jpsi_dstar_deltapt" : "float32",
+                                        "jpsi_dstar_deltamass" : "float32",
+                                        "weight": "float32",})
+                ds['asso'].extend({"dstar_mass": dstar_mass, 
+                                "dstar_pt": dstar_pt, 
+                                "dstar_rap": dstar_rap,   
+                                "dstar_d0dl": dstar_d0dl,  
+                                "dstar_d0dlsig": dstar_d0dlsig, 
+                                "dstar_d0dca" : dstar_d0dca,
+                                "jpsi_mass": all_asso_jpsi_mass, 
+                                "jpsi_pt": all_asso_jpsi_pt, 
+                                "jpsi_rap": all_asso_jpsi_rap,
+                                "jpsi_dl": all_asso_jpsi_dl,
+                                "jpsi_dlErr": all_asso_jpsi_dl_err,
+                                "jpsi_dstar_mass": jpsi_dstar_mass,                        
+                                "jpsi_dstar_deltarap": jpsi_dstar_deltarap,
+                                "jpsi_dstar_deltaphi": jpsi_dstar_deltaphi,
+                                "jpsi_dstar_deltapt": jpsi_dstar_deltapt,
+                                "jpsi_dstar_deltamass": jpsi_dstar_deltamass,
+                                "weight": weight,})
+            
+            else:
+                ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
+                                        "dstar_pt": "float32",
+                                        "dstar_rap": "float32",
+                                        "dstar_phi": "float32",
+                                        "dstar_d0dl" : "float32",
+                                        "dstar_d0dlsig" : "float32",
+                                        "dstar_d0dca" : "float32",
+                                        "jpsi_mass": "float32", 
+                                        "jpsi_pt": "float32",
+                                        "jpsi_rap": "float32",
+                                        "jpsi_phi": "float32",
+                                        "jpsi_dl": "float32",
+                                        "jpsi_dlErr": "float32",
+                                        "jpsi_dstar_mass": "float32",
+                                        "jpsi_dstar_pt" : "float32",
+                                        "jpsi_dstar_deltarap": "float32",
+                                        "jpsi_dstar_deltaphi": "float32",
+                                        "jpsi_dstar_deltapt": "float32", 
+                                        "jpsi_dstar_deltamass": "float32", 
+                                        })
+                ds['asso'].extend({"dstar_mass": dstar_mass, 
+                                "dstar_pt": dstar_pt, 
+                                "dstar_rap": dstar_rap, 
+                                "dstar_phi": dstar_phi,   
+                                "dstar_d0dl": dstar_d0dl,  
+                                "dstar_d0dlsig": dstar_d0dlsig, 
+                                "dstar_d0dca" : dstar_d0dca,
+                                "jpsi_mass": all_asso_jpsi_mass, 
+                                "jpsi_pt": all_asso_jpsi_pt, 
+                                "jpsi_rap": all_asso_jpsi_rap,
+                                "jpsi_phi": all_asso_jpsi_phi,
+                                "jpsi_dl": all_asso_jpsi_dl,
+                                "jpsi_dlErr": all_asso_jpsi_dl_err,
+                                "jpsi_dstar_mass": jpsi_dstar_mass, 
+                                "jpsi_dstar_pt": jpsi_dstar_pt, 
+                                "jpsi_dstar_deltarap": jpsi_dstar_deltarap,
+                                "jpsi_dstar_deltaphi": jpsi_dstar_deltaphi,
+                                "jpsi_dstar_deltapt": jpsi_dstar_deltapt,
+                                "jpsi_dstar_deltamass": jpsi_dstar_deltamass,
+                                })
 
 if __name__ == '__main__':
 
@@ -303,52 +335,58 @@ if __name__ == '__main__':
     Main function. In the end it will create root files with the needed information to
     perform the fits
     '''
-
+    # splots
+    splot = config.splot
     # Takes a list with eras to be runned
     era_list= config.era_list
-    # Path to the files
-    main_path = config.main_path
     # bins
     bin = config.bin
 
-    # Loop over the era list defined on config_trigger_procesor 
-    for b in bin:   
-        for era in era_list:
+    if splot:
 
-            # Built the path to files with trigger applied
-            if 'dps' in era or 'sps' in era:
-                path_merged_data = main_path  + '/' + era + '/' + 'merged_data/'
-                print('Reading files from:')
-                print(path_merged_data) 
-            else:
-                path_merged_data = main_path  + '/' + era + '/' + 'merged_data/trigger' + '/' + config.cate 
-                print('Reading files from:')
-                print(path_merged_data)
+        path_merged_data = config.splot_path 
+        print('Reading files from:')
+        print(path_merged_data)
+        # Analysis condition: trigger or no_trigger
+        condition = config.condition
+        
+        
+        # Calls load_accumulator function to load the accumulator
+        acc = load(path_merged_data + '/'  + config.splot_coffea)
 
-            # Analysis condition: trigger or no_trigger
-            condition = config.condition
-            
-            # Calls load_accumulator function to load the accumulator
-            acc = load_accumulator(path_merged_data, era, condition, b)
+        # Path to store the root file
+        path_output = config.path_output
+        print(f'Creating files on:')
+        print(path_output)
 
-            # Path to store the root file
-            path_output = config.path_output
-            print(f'Creating files on:')
-            print(path_output)
+        # Create the root files
+        create_root(acc, path_output, 'splot', bin, condition)
+    else:
+        # Loop over the era list defined on config_trigger_procesor 
+        for b in bin:   
+            for era in era_list:
+                # Path to the files
+                main_path = config.main_path
+                # Built the path to files with trigger applied
+                if 'dps' in era or 'sps' in era:
+                    path_merged_data = main_path  + '/' + era + '/' + 'merged_data/'
+                    print('Reading files from:')
+                    print(path_merged_data) 
+                else:
+                    path_merged_data = main_path  + '/' + era + '/' + 'merged_data/trigger' + '/' + config.cate 
+                    print('Reading files from:')
+                    print(path_merged_data)
 
-            # Create the root files
-            create_root(acc, path_output, era, b, condition)
+                # Analysis condition: trigger or no_trigger
+                condition = config.condition
+                
+                # Calls load_accumulator function to load the accumulator
+                acc = load_accumulator(path_merged_data, era, condition, b)
 
-""" import os
-main_path = '/home/mabarros/Analysis_2018/OniaOpenCharmRun2ULAna/output/Charmonium_2018/RunA/merged_data'
-files = []
-with os.scandir(main_path) as it:
-    for file in it:
-        if file.name.endswith('.coffea') and (file.stat().st_size != 0):
-            files.append(file.path)
+                # Path to store the root file
+                path_output = config.path_output
+                print(f'Creating files on:')
+                print(path_output)
 
-print(files) """
-
-
-
-
+                # Create the root files
+                create_root(acc, path_output, era, b, condition)
