@@ -56,11 +56,18 @@ def load_accumulator(main_path, era, condition, bin):
         # List to store final paths
         files = []
         # With statement to open scan more efficiently
-        with os.scandir(main_path) as it:
-            for file in it:
-                # Stores all other files finished with .coffea
-                if file.name.endswith('.coffea') and b[8:] in file.name and  (file.stat().st_size != 0):
-                    files.append(file.path)
+        if 'sps' not in era_list[0] and 'dps' not in era_list[0]:
+            with os.scandir(main_path) as it:
+                for file in it:                
+                    # Stores all other files finished with .coffea
+                    if file.name.endswith('.coffea') and b[8:] in file.name and  (file.stat().st_size != 0):
+                        files.append(file.path)
+        else:
+            with os.scandir(main_path) as it:
+                for file in it:                
+                    # Stores all other files finished with .coffea
+                    if file.name.endswith('.coffea') and  (file.stat().st_size != 0):
+                        files.append(file.path)
         # Strategy to take the trigger name and store on trigger_name variable.
         # Ex: trigger_name = 'HLT_Dimuon25'
         try:
@@ -128,10 +135,13 @@ def create_root(accumulator, path_output, era, b, condition=None):
         # Conditions for MC        
         if 'dps' in era or 'sps' in era:
 
+            #!!!! no need to take out wrong charge as it was already done (in real data we do this)
+
             # Takes wrong and right charge Dstars
             dstar_mass = acc['DimuDstar']['dstar_deltamr'].value
             dstar_pt = acc['DimuDstar']['dstar_pt'].value
             dstar_rap = acc['DimuDstar']['dstar_rap'].value
+            dstar_phi = acc['DimuDstar']['dstar_phi'].value
             dstar_d0dlsig = acc['DimuDstar']['dstar_d0dlsig'].value
             dstar_d0dl = acc['DimuDstar']['dstar_d0dl'].value
             dstar_d0dca = acc['DimuDstar']['dstar_d0dca'].value
@@ -140,11 +150,13 @@ def create_root(accumulator, path_output, era, b, condition=None):
             all_asso_jpsi_mass = acc['DimuDstar']['jpsi_mass'].value
             all_asso_jpsi_pt = acc['DimuDstar']['jpsi_pt'].value
             all_asso_jpsi_rap = acc['DimuDstar']['jpsi_rap'].value
+            all_asso_jpsi_phi = acc['DimuDstar']['jpsi_phi'].value
             all_asso_jpsi_dl = acc['DimuDstar']['jpsi_dl'].value
             all_asso_jpsi_dl_err = acc['DimuDstar']['jpsi_dlErr'].value
 
             # DimuDstar           
             jpsi_dstar_mass = acc['DimuDstar']['dimu_dstar_mass'].value
+            jpsi_dstar_pt = acc['DimuDstar']['dimu_dstar_pt'].value
             jpsi_dstar_deltarap = acc['DimuDstar']['dimu_dstar_deltarap'].value
             jpsi_dstar_deltaphi = acc['DimuDstar']['dimu_dstar_deltaphi'].value
             jpsi_dstar_deltapt = acc['DimuDstar']['dimu_dstar_deltapt'].value
@@ -255,36 +267,42 @@ def create_root(accumulator, path_output, era, b, condition=None):
                 ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
                                         "dstar_pt": "float32",
                                         "dstar_rap": "float32",
+                                        "dstar_phi": "float32",
                                         "dstar_d0dl" : "float32",
                                         "dstar_d0dlsig" : "float32",
                                         "dstar_d0dca" : "float32",
                                         "jpsi_mass": "float32", 
                                         "jpsi_pt": "float32",
                                         "jpsi_rap": "float32",
+                                        "jpsi_phi": "float32",
                                         "jpsi_dl": "float32",
                                         "jpsi_dlErr": "float32",  
-                                        "jpsi_dstar_mass" : "float32,",                                 
+                                        "jpsi_dstar_mass" : "float32,",   
+                                        "jpsi_dstar_pt" : "float32,",                                 
                                         "jpsi_dstar_deltarap": "float32", 
                                         "jpsi_dstar_deltaphi" : "float32", 
                                         "jpsi_dstar_deltapt" : "float32",
-                                        "jpsi_dstar_deltamass" : "float32",
+                                        #"jpsi_dstar_deltamass" : "float32",
                                         "weight": "float32",})
                 ds['asso'].extend({"dstar_mass": dstar_mass, 
                                 "dstar_pt": dstar_pt, 
                                 "dstar_rap": dstar_rap,   
+                                "dstar_phi": dstar_rap,   
                                 "dstar_d0dl": dstar_d0dl,  
                                 "dstar_d0dlsig": dstar_d0dlsig, 
                                 "dstar_d0dca" : dstar_d0dca,
                                 "jpsi_mass": all_asso_jpsi_mass, 
                                 "jpsi_pt": all_asso_jpsi_pt, 
                                 "jpsi_rap": all_asso_jpsi_rap,
+                                "jpsi_phi": all_asso_jpsi_rap,
                                 "jpsi_dl": all_asso_jpsi_dl,
                                 "jpsi_dlErr": all_asso_jpsi_dl_err,
-                                "jpsi_dstar_mass": jpsi_dstar_mass,                        
+                                "jpsi_dstar_mass": jpsi_dstar_mass,    
+                                "jpsi_dstar_pt" : jpsi_dstar_pt,                    
                                 "jpsi_dstar_deltarap": jpsi_dstar_deltarap,
                                 "jpsi_dstar_deltaphi": jpsi_dstar_deltaphi,
                                 "jpsi_dstar_deltapt": jpsi_dstar_deltapt,
-                                "jpsi_dstar_deltamass": jpsi_dstar_deltamass,
+                                #"jpsi_dstar_deltamass": jpsi_dstar_deltamass,
                                 "weight": weight,})
             
             else:

@@ -28,9 +28,9 @@ To run you simply do: python3 merge_data
 
 #era_list=['RunB_HIPM', 'RunC_HIPM', 'RunD_HIPM', 'RunE_HIPM', 'RunF_HIPM',] # 2016-pre-VFP
 #era_list=['RunF','RunG', 'RunH'] # 2016-pos-VFP
-era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] #2017
+#era_list=['RunB', 'RunC', 'RunD', 'RunE', 'RunF',] #2017
 #era_list=['RunA','RunB', 'RunC', 'RunD'] # 2018
-
+era_list=["sps_3fs_ccbar_25to100"]
 ## Bins
 bin = {'jpsi_pt_bin1' : [25, 100]}
 """ bin = {'jpsi_pt_bin1' : [30, 40],
@@ -41,7 +41,7 @@ bin = {'jpsi_pt_bin1' : [25, 100]}
 
 ### Special name for save it (e.g: cate = 'prompt_jpsi')
 
-cate = 'inv_mass_high_cut_18GeV'
+cate = 'usual'
 
 nevts_data = 4950 # 2016-pre-VFP: 2321; 2016-pos-VFP: 1993; 2017: 4950; 2018: 6891
 
@@ -55,6 +55,6 @@ condition = 'trigger'
 path_output = 'data_root_files/2017/'
 
 # splot save_ttree
-splot = True
+splot = False
 splot_path = '/home/mapse/Documents/temp/analysis_fit/fit/splot_coffea_files'
 splot_coffea = 'signal_sweight_inv_mass_high_cut_8.coffea'
