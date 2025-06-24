@@ -386,7 +386,7 @@ class TriggerProcessor(processor.ProcessorABC):
             #DimuDstar = DimuDstar[DimuDstar.dstar_d0dca < 0.01]
 
             ##### Cut for removing peak
-            DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 18]
+            #DimuDstar = DimuDstar[DimuDstar.dimu_dstar_mass > 18]
     
             ##### vtx prob cut 
             DimuDstar = DimuDstar[DimuDstar.associationProb > 0.05]
@@ -402,10 +402,11 @@ class TriggerProcessor(processor.ProcessorABC):
             #DimuDstar = DimuDstar[DimuDstar.dstar_d0dlsig > 12]
 
             ##### To take efficiencies from efficiency files
-            file_eff = uproot.open(f'/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_monte_carlo/efficiencies_per_evt/output/efficiency/efficiencies_DPS-ccbar_pt_bin_jpsi_2017.root')
+            file_eff = uproot.open(f'/afs/cern.ch/work/m/mabarros/public/CMSSW_10_6_12/src/analysis_monte_carlo/efficiencies_per_evt/output/efficiency/efficiencies_DPS-ccbar_fiducial_jpsi_2017.root')
             hists_eff = {h[:h.find(';')]:file_eff[h].to_hist() for h in file_eff}
             eff, eff_err_up, eff_err_down, eff_asso, eff_asso_err_up, eff_asso_err_down, wgt = get_evt_eff(hists_eff, DimuDstar)
             eff = ak.unflatten(eff, ak.num(DimuDstar))
+            eff_err_up = ak.unflatten(eff_err_up, ak.num(DimuDstar))
             eff_err_down = ak.unflatten(eff_err_down, ak.num(DimuDstar))
             eff_asso = ak.unflatten(eff_asso, ak.num(DimuDstar))
             eff_asso_err_up = ak.unflatten(eff_asso_err_up, ak.num(DimuDstar))

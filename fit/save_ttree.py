@@ -161,9 +161,13 @@ def create_root(accumulator, path_output, era, b, condition=None):
             jpsi_dstar_deltaphi = acc['DimuDstar']['dimu_dstar_deltaphi'].value
             jpsi_dstar_deltapt = acc['DimuDstar']['dimu_dstar_deltapt'].value
 
+            # Pileup, muon ID, and muon reco weights - for normalization
+            weight_normalization = acc['weight_normalization'].value
+            #print(f'weight for normalization: {weight_normalization}')
+
             # Pileup, muon ID, and muon reco weights
             weight = acc['weight'].value
-            print(f'weight: {weight}')
+            #print(f'weight: {weight}')
             
         elif 'splot' in era:
             print('working with splot file')
@@ -264,6 +268,8 @@ def create_root(accumulator, path_output, era, b, condition=None):
             
             if 'dps' in era or 'sps' in era:
 
+                ds['normalization'] = uproot3.newtree({"weight_normalization": "float32",})
+
                 ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
                                         "dstar_pt": "float32",
                                         "dstar_rap": "float32",
@@ -283,7 +289,9 @@ def create_root(accumulator, path_output, era, b, condition=None):
                                         "jpsi_dstar_deltaphi" : "float32", 
                                         "jpsi_dstar_deltapt" : "float32",
                                         #"jpsi_dstar_deltamass" : "float32",
-                                        "weight": "float32",})
+                                        "weight": "float32",
+                                        })
+                ds['normalization'].extend({"weight_normalization": weight_normalization,})
                 ds['asso'].extend({"dstar_mass": dstar_mass, 
                                 "dstar_pt": dstar_pt, 
                                 "dstar_rap": dstar_rap,   
@@ -303,7 +311,8 @@ def create_root(accumulator, path_output, era, b, condition=None):
                                 "jpsi_dstar_deltaphi": jpsi_dstar_deltaphi,
                                 "jpsi_dstar_deltapt": jpsi_dstar_deltapt,
                                 #"jpsi_dstar_deltamass": jpsi_dstar_deltamass,
-                                "weight": weight,})
+                                "weight": weight,
+                                })
             
             else:
                 ds['asso'] = uproot3.newtree({"dstar_mass": "float32",
